@@ -225,6 +225,14 @@ The application follows a modern full-stack architecture with clear separation o
 - Clean database ready for production deployment with core achievements system
 - Cleared all logs and temporary build files for clean development environment
 
+### Database Cleanup Script Implementation (July 18, 2025)
+- Created automated cleanup script `cleanup-database.js` for easy database reset
+- Script preserves admin user, golf courses (3), holes (54), and achievement definitions (15)
+- Removes all tournaments, rounds, scorecards, scores, players, and test data
+- Added simple bash wrapper `cleanup.sh` with confirmation prompt
+- Usage: Run `tsx cleanup-database.js` or `./cleanup.sh` for interactive cleanup
+- Maintains production-ready state while allowing quick reset for testing
+
 ### Deployment Ready
 - Production build process configured with frontend/backend compilation
 - Database schema complete with test data
