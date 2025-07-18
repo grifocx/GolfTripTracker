@@ -1,8 +1,8 @@
-# Stick-IT - Golf Tournament Management System - Roadmap
+# BroGolfTracker - Golf Tournament Management System - Roadmap
 
 ## Project Overview
 
-Stick-IT is designed to support annual golf trips with comprehensive tournament management, handicap tracking, and real-time scoring capabilities. This roadmap outlines the project's development journey, current status, and future enhancements.
+BroGolfTracker is designed to support annual golf trips with comprehensive tournament management, handicap tracking, and real-time scoring capabilities. This roadmap outlines the project's development journey, current status, and future enhancements.
 
 ## Development Phases
 
@@ -223,6 +223,6 @@ Stick-IT is designed to support annual golf trips with comprehensive tournament 
 
 ## Conclusion
 
-Stick-IT has successfully completed its core development phases and is ready for production use. The foundation is solid with a comprehensive feature set that addresses the primary needs of golf tournament management. Future enhancements will focus on advanced analytics, mobile app development, and third-party integrations based on user feedback and usage patterns.
+BroGolfTracker has successfully completed its core development phases and is ready for production use. The foundation is solid with a comprehensive feature set that addresses the primary needs of golf tournament management. Future enhancements will focus on advanced analytics, mobile app development, and third-party integrations based on user feedback and usage patterns.
 
 The system provides a professional, user-friendly platform for managing golf tournaments with real-time scoring, handicap calculations, and leaderboard management - all essential features for successful golf trip organization.

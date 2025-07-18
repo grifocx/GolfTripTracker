@@ -1,7 +1,7 @@
 # Deployment Guide
 
 ## Overview
-This guide explains how to deploy Stick-IT (Golf Tournament Management System) to production.
+This guide explains how to deploy BroGolfTracker (Golf Tournament Management System) to production.
 
 ## Build Process
 

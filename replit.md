@@ -126,8 +126,10 @@ The application follows a modern full-stack architecture with clear separation o
 
 ## Recent Changes
 
-### July 18, 2025 - Rebranding & Cross-Browser Compatibility Fixes
-- Rebranded application to "BroGolfTracker" across all interfaces and documentation
+### July 18, 2025 - Authentication Fix & Complete Rebranding
+- Fixed authentication system - resolved login issues and created user accounts
+- Completed rebranding from "Stick-IT" to "BroGolfTracker" across all files and documentation
+- Updated all user-facing text, titles, and branding elements
 - Fixed critical authentication issue causing blank screens in Safari and Edge browsers
 - Resolved missing icon import (Volleyball → Target) in navigation component
 - Added comprehensive error boundaries for graceful error handling
