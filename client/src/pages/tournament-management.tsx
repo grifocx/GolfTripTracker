@@ -496,6 +496,14 @@ export default function TournamentManagement() {
             </Select>
           </div>
 
+          {!selectedTournament && tournaments && tournaments.length > 0 && (
+            <div className="text-center py-8 text-gray-500">
+              <Trophy className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+              <h3 className="text-lg font-medium mb-2">Select a Tournament</h3>
+              <p>Choose a tournament from the dropdown above to manage its rounds and settings.</p>
+            </div>
+          )}
+
           {selectedTournament && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Tournament Info */}
@@ -615,7 +623,12 @@ export default function TournamentManagement() {
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>Tournament Rounds</CardTitle>
+            <div>
+              <CardTitle>Rounds for "{selectedTournament?.name}"</CardTitle>
+              <p className="text-sm text-gray-600 mt-1">
+                Manage tournament rounds and schedule
+              </p>
+            </div>
             <Dialog open={newRoundDialogOpen} onOpenChange={setNewRoundDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -625,9 +638,22 @@ export default function TournamentManagement() {
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Create New Round</DialogTitle>
+                  <DialogTitle>Create New Round for "{selectedTournament?.name}"</DialogTitle>
+                  <p className="text-sm text-gray-600 mt-2">
+                    Adding a round to {selectedTournament?.name} ({selectedTournament?.startDate} - {selectedTournament?.endDate})
+                  </p>
                 </DialogHeader>
                 <form onSubmit={roundForm.handleSubmit(onCreateRound)} className="space-y-4">
+                  <div>
+                    <Label htmlFor="tournament">Tournament</Label>
+                    <Input
+                      id="tournament"
+                      value={selectedTournament?.name || ""}
+                      disabled
+                      className="bg-gray-50"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">This round will be added to the selected tournament</p>
+                  </div>
                   <div>
                     <Label htmlFor="roundNumber">Round Number</Label>
                     <Input
