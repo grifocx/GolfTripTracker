@@ -1,10 +1,14 @@
 import { apiRequest } from "./queryClient";
-import type { User, LoginData, InsertUser } from "@shared/schema";
+import type { User, InsertUser } from "@shared/schema";
 
 export const authApi = {
-  login: async (credentials: LoginData): Promise<User> => {
-    const response = await apiRequest("POST", "/api/auth/login", credentials);
-    return response.json();
+  login: async (username: string, password: string): Promise<User> => {
+    console.log("Making login request with:", { username, password: "***" });
+    const response = await apiRequest("POST", "/api/auth/login", { username, password });
+    console.log("Login response status:", response.status);
+    const result = await response.json();
+    console.log("Login response data:", result);
+    return result;
   },
 
   register: async (userData: InsertUser): Promise<User> => {

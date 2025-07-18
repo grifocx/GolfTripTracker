@@ -38,22 +38,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/auth/login", async (req: Request, res: Response) => {
     try {
+      console.log("Login request body:", req.body);
       const { username, password } = loginSchema.parse(req.body);
+      console.log("Parsed login data:", { username, password: "***" });
       
       const user = await storage.getUserByUsername(username);
+      console.log("Found user:", user ? { id: user.id, username: user.username } : null);
+      
       if (!user) {
+        console.log("User not found for username:", username);
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
       const isValidPassword = await bcrypt.compare(password, user.password);
+      console.log("Password valid:", isValidPassword);
+      
       if (!isValidPassword) {
+        console.log("Invalid password for user:", username);
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
       // Don't return password
       const { password: _, ...userWithoutPassword } = user;
+      console.log("Login successful, returning user:", { id: user.id, username: user.username });
       res.json(userWithoutPassword);
     } catch (error: any) {
+      console.error("Login error:", error);
       if (error.name === "ZodError") {
         return res.status(400).json({ message: fromZodError(error).message });
       }
