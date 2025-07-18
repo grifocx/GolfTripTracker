@@ -8,6 +8,7 @@ import Admin from "./admin";
 import Achievements from "./achievements";
 import TournamentManagement from "./tournament-management";
 import TournamentSetup from "./tournament-setup";
+import CourseManagement from "./course-management";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -36,8 +37,9 @@ export default function Dashboard() {
           return <TournamentManagement />;
         case "tournament-setup":
           return <TournamentSetup />;
-        case "admin":
         case "courses":
+          return <CourseManagement />;
+        case "admin":
           return <Admin />;
         default:
           return <Leaderboard />;

@@ -42,6 +42,8 @@ export interface IStorage {
   getHolesByCourse(courseId: number): Promise<Hole[]>;
   createHole(hole: InsertHole): Promise<Hole>;
   createHoles(holes: InsertHole[]): Promise<Hole[]>;
+  deleteHole(holeId: number): Promise<void>;
+  getCoursesWithHoleCounts(): Promise<(Course & { holes: Hole[]; holesCount: number })[]>;
 
   // Round methods
   getRoundsByTournament(tournamentId: number): Promise<Round[]>;
@@ -210,6 +212,28 @@ export class DatabaseStorage implements IStorage {
       .insert(holes)
       .values(holeData)
       .returning();
+  }
+
+  async deleteHole(holeId: number): Promise<void> {
+    await db
+      .delete(holes)
+      .where(eq(holes.id, holeId));
+  }
+
+  async getCoursesWithHoleCounts(): Promise<(Course & { holes: Hole[]; holesCount: number })[]> {
+    const allCourses = await this.getAllCourses();
+    const result = [];
+    
+    for (const course of allCourses) {
+      const courseHoles = await this.getHolesByCourse(course.id);
+      result.push({
+        ...course,
+        holes: courseHoles,
+        holesCount: courseHoles.length,
+      });
+    }
+    
+    return result;
   }
 
   async getRoundsByTournament(tournamentId: number): Promise<Round[]> {

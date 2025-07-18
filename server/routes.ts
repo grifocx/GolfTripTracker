@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, loginSchema, insertCourseSchema, insertRoundSchema, insertScorecardSchema, insertTournamentSchema } from "@shared/schema";
+import { insertUserSchema, loginSchema, insertCourseSchema, insertHoleSchema, insertRoundSchema, insertScorecardSchema, insertTournamentSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import bcrypt from "bcryptjs";
 import { achievementService } from "./achievements";
@@ -206,6 +206,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const courseId = parseInt(req.params.id);
       const holes = await storage.getHolesByCourse(courseId);
       res.json(holes);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get courses with hole counts
+  app.get("/api/courses/with-holes", async (req: Request, res: Response) => {
+    try {
+      const courses = await storage.getCoursesWithHoleCounts();
+      res.json(courses);
+    } catch (error) {
+      console.error("Error fetching courses with holes:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Create individual hole
+  app.post("/api/holes", async (req: Request, res: Response) => {
+    try {
+      const holeData = insertHoleSchema.parse(req.body);
+      const hole = await storage.createHole(holeData);
+      res.json(hole);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ message: fromZodError(error).message });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Delete hole
+  app.delete("/api/holes/:id", async (req: Request, res: Response) => {
+    try {
+      const holeId = parseInt(req.params.id);
+      await storage.deleteHole(holeId);
+      res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Internal server error" });
     }
