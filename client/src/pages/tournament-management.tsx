@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Plus, MapPin, Users, DollarSign, Trophy, Settings, Info } from "lucide-react";
+import { Calendar, Plus, MapPin, Users, DollarSign, Trophy, Settings, Info, Play, Pause, Square } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertTournamentSchema, insertRoundSchema, type InsertTournament, type InsertRound } from "@shared/schema";
@@ -45,6 +45,7 @@ export default function TournamentManagement() {
       endDate: new Date().toISOString().split('T')[0],
       dailyBuyIn: 0,
       overallBuyIn: 0,
+      status: "draft",
       isActive: true,
     },
   });
@@ -139,6 +140,27 @@ export default function TournamentManagement() {
     },
   });
 
+  const updateTournamentStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: number; status: "draft" | "in_progress" | "completed" }) => {
+      return apiRequest("PATCH", `/api/tournaments/${id}/status`, { status });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Tournament Status Updated",
+        description: "The tournament status has been updated successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/tournament/active"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update tournament status",
+        variant: "destructive",
+      });
+    },
+  });
+
   if (!isAdmin) {
     return (
       <div className="space-y-6">
@@ -185,6 +207,45 @@ export default function TournamentManagement() {
         id: selectedRound.id,
         tournamentId: tournament?.id || 0,
       });
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "draft":
+        return <Settings className="h-4 w-4" />;
+      case "in_progress":
+        return <Play className="h-4 w-4" />;
+      case "completed":
+        return <Square className="h-4 w-4" />;
+      default:
+        return <Settings className="h-4 w-4" />;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "draft":
+        return "bg-gray-100 text-gray-800";
+      case "in_progress":
+        return "bg-green-100 text-green-800";
+      case "completed":
+        return "bg-blue-100 text-blue-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "draft":
+        return "Draft";
+      case "in_progress":
+        return "In Progress";
+      case "completed":
+        return "Completed";
+      default:
+        return "Unknown";
     }
   };
 
@@ -414,17 +475,78 @@ export default function TournamentManagement() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Tournament Info */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Current Tournament</h3>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Trophy className="h-5 w-5 text-golf-green" />
-                  <div>
-                    <p className="font-medium">{tournament.name}</p>
-                    <p className="text-sm text-gray-600">
-                      {tournament.startDate} to {tournament.endDate}
-                    </p>
+              <div className="bg-golf-green/10 p-4 rounded-lg">
+                <h3 className="font-semibold text-golf-green flex items-center gap-2">
+                  <Trophy className="h-5 w-5" />
+                  Tournament
+                </h3>
+                <p className="text-2xl font-bold text-golf-dark">{tournament.name}</p>
+                <p className="text-sm text-gray-600">
+                  {tournament.startDate} - {tournament.endDate}
+                </p>
+              </div>
+              
+              {/* Tournament Status Management */}
+              <div className="bg-white p-4 rounded-lg border">
+                <h4 className="font-semibold text-gray-800 mb-3">Tournament Status</h4>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Badge className={`${getStatusColor(tournament.status || "draft")} flex items-center gap-1`}>
+                      {getStatusIcon(tournament.status || "draft")}
+                      {getStatusLabel(tournament.status || "draft")}
+                    </Badge>
+                  </div>
+                  <div className="flex gap-2">
+                    {tournament.status === "draft" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => updateTournamentStatusMutation.mutate({ id: tournament.id, status: "in_progress" })}
+                        disabled={updateTournamentStatusMutation.isPending}
+                        className="bg-green-50 hover:bg-green-100 text-green-800 border-green-200"
+                      >
+                        <Play className="h-4 w-4 mr-1" />
+                        Start
+                      </Button>
+                    )}
+                    {tournament.status === "in_progress" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => updateTournamentStatusMutation.mutate({ id: tournament.id, status: "completed" })}
+                        disabled={updateTournamentStatusMutation.isPending}
+                        className="bg-blue-50 hover:bg-blue-100 text-blue-800 border-blue-200"
+                      >
+                        <Square className="h-4 w-4 mr-1" />
+                        Complete
+                      </Button>
+                    )}
+                    {tournament.status === "completed" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => updateTournamentStatusMutation.mutate({ id: tournament.id, status: "in_progress" })}
+                        disabled={updateTournamentStatusMutation.isPending}
+                        className="bg-green-50 hover:bg-green-100 text-green-800 border-green-200"
+                      >
+                        <Play className="h-4 w-4 mr-1" />
+                        Reopen
+                      </Button>
+                    )}
                   </div>
                 </div>
+                <div className="mt-2 text-sm text-gray-600">
+                  {tournament.status === "draft" && "Tournament is being set up. Start when ready to begin scoring."}
+                  {tournament.status === "in_progress" && "Tournament is active. Players can submit scores."}
+                  {tournament.status === "completed" && "Tournament has ended. Results are final."}
+                </div>
+              </div>
+            </div>
+            
+            {/* Tournament Stats */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900">Tournament Stats</h3>
+              <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <MapPin className="h-5 w-5 text-golf-green" />
                   <div>
@@ -442,12 +564,8 @@ export default function TournamentManagement() {
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* Tournament Stats */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Tournament Stats</h3>
-              <div className="grid grid-cols-2 gap-4">
+              
+              <div className="grid grid-cols-2 gap-4 pt-4">
                 <div className="bg-golf-green/10 p-3 rounded-lg">
                   <div className="text-2xl font-bold text-golf-green">
                     {rounds?.length || 0}
@@ -455,8 +573,8 @@ export default function TournamentManagement() {
                   <div className="text-sm text-gray-600">Rounds</div>
                 </div>
                 <div className="bg-golf-gold/10 p-3 rounded-lg">
-                  <div className="text-2xl font-bold golf-gold">
-                    {tournament.isActive ? "Active" : "Inactive"}
+                  <div className="text-lg font-bold golf-gold">
+                    {getStatusLabel(tournament.status || "draft")}
                   </div>
                   <div className="text-sm text-gray-600">Status</div>
                 </div>

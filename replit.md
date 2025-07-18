@@ -166,6 +166,17 @@ The application follows a modern full-stack architecture with clear separation o
 - Added proper tournament stats and round management interface
 - Fixed tournament creation dialog functionality with proper course selection
 
+### July 18, 2025 - Tournament Status System Implementation
+- Implemented comprehensive tournament status system with draft/in-progress/completed states
+- Added tournament status field to database schema replacing simple boolean isActive
+- Created admin interface for tournament status management with visual indicators
+- Added status-based tournament filtering in getActiveTournament method
+- Implemented tournament status transitions with proper validation
+- Added tournament status API endpoint (PATCH /api/tournaments/:id/status)
+- Enhanced tournament management page with status controls and descriptions
+- Database migration: Added status column with default 'draft' value
+- Updated tournament #4 to 'in_progress' status for active tournament tracking
+
 ### July 18, 2025 - Navigation Structure Reorganization
 - Implemented dedicated "Tournament Management" menu item in left sidebar navigation
 - Removed redundant "Rounds" menu item since rounds are subset of tournaments

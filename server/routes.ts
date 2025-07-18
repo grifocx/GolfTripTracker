@@ -166,6 +166,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/tournaments/:id/status", async (req: Request, res: Response) => {
+    try {
+      const tournamentId = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      if (!["draft", "in_progress", "completed"].includes(status)) {
+        return res.status(400).json({ message: "Invalid status. Must be draft, in_progress, or completed" });
+      }
+      
+      const tournament = await storage.updateTournamentStatus(tournamentId, status);
+      res.json(tournament);
+    } catch (error: any) {
+      console.error("Tournament status update error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // User routes
   app.get("/api/users", async (req: Request, res: Response) => {
     try {

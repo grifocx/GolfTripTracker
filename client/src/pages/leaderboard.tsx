@@ -26,19 +26,7 @@ export default function Leaderboard() {
     enabled: !!tournament?.id && leaderboardType === "overall",
   });
 
-  // Debug logging
-  console.log("Leaderboard component state:", {
-    tournament,
-    tournamentLoading,
-    tournamentError,
-    rounds,
-    roundsLoading,
-    roundsError,
-    overallLeaderboard,
-    overallLoading,
-    overallError,
-    leaderboardType
-  });
+
 
   // Auto-select the current round or latest round
   const currentRound = rounds?.find((r: any) => r.status === "in_progress") || rounds?.[rounds.length - 1];

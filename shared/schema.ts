@@ -23,7 +23,8 @@ export const tournaments = pgTable("tournaments", {
   endDate: date("end_date").notNull(),
   dailyBuyIn: decimal("daily_buy_in", { precision: 10, scale: 2 }).notNull(),
   overallBuyIn: decimal("overall_buy_in", { precision: 10, scale: 2 }).notNull(),
-  isActive: boolean("is_active").default(true).notNull(),
+  status: text("status").notNull().default("draft"), // draft, in_progress, completed
+  isActive: boolean("is_active").default(true).notNull(), // Keep for backward compatibility
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -267,6 +268,7 @@ export const insertTournamentSchema = z.object({
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "End date must be in YYYY-MM-DD format"),
   dailyBuyIn: z.number().min(0, "Daily buy-in must be positive"),
   overallBuyIn: z.number().min(0, "Overall buy-in must be positive"),
+  status: z.enum(["draft", "in_progress", "completed"]).optional().default("draft"),
   isActive: z.boolean().optional().default(true),
 });
 

@@ -29,6 +29,7 @@ export interface IStorage {
   getAllTournaments(): Promise<Tournament[]>;
   createTournament(tournament: InsertTournament): Promise<Tournament>;
   updateTournament(id: number, tournament: Partial<InsertTournament>): Promise<Tournament>;
+  updateTournamentStatus(id: number, status: "draft" | "in_progress" | "completed"): Promise<Tournament>;
   addPlayersToTournament(tournamentId: number, playerIds: number[]): Promise<void>;
   getTournamentPlayers(tournamentId: number): Promise<User[]>;
 
@@ -104,12 +105,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getActiveTournament(): Promise<Tournament | undefined> {
-    const [tournament] = await db
+    // Look for in-progress tournament first, then draft tournaments
+    const [inProgressTournament] = await db
       .select()
       .from(tournaments)
-      .where(eq(tournaments.isActive, true))
+      .where(and(eq(tournaments.status, "in_progress"), eq(tournaments.isActive, true)))
       .orderBy(desc(tournaments.createdAt));
-    return tournament || undefined;
+    
+    if (inProgressTournament) {
+      return inProgressTournament;
+    }
+    
+    // If no in-progress tournament, return the latest draft
+    const [draftTournament] = await db
+      .select()
+      .from(tournaments)
+      .where(and(eq(tournaments.status, "draft"), eq(tournaments.isActive, true)))
+      .orderBy(desc(tournaments.createdAt));
+    
+    return draftTournament || undefined;
   }
 
   async getAllTournaments(): Promise<Tournament[]> {
@@ -155,6 +169,15 @@ export class DatabaseStorage implements IStorage {
     const [updated] = await db
       .update(tournaments)
       .set(tournament)
+      .where(eq(tournaments.id, id))
+      .returning();
+    return updated;
+  }
+
+  async updateTournamentStatus(id: number, status: "draft" | "in_progress" | "completed"): Promise<Tournament> {
+    const [updated] = await db
+      .update(tournaments)
+      .set({ status })
       .where(eq(tournaments.id, id))
       .returning();
     return updated;
