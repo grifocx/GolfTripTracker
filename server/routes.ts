@@ -203,6 +203,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/rounds/:id", async (req: Request, res: Response) => {
+    try {
+      const roundId = parseInt(req.params.id);
+      const roundData = insertRoundSchema.parse(req.body);
+      const round = await storage.updateRound(roundId, roundData);
+      res.json(round);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ message: fromZodError(error).message });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Scorecard routes
   app.get("/api/rounds/:roundId/scorecards", async (req: Request, res: Response) => {
     try {

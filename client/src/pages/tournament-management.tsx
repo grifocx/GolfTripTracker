@@ -20,6 +20,8 @@ export default function TournamentManagement() {
   const { toast } = useToast();
   const [newTournamentDialogOpen, setNewTournamentDialogOpen] = useState(false);
   const [newRoundDialogOpen, setNewRoundDialogOpen] = useState(false);
+  const [editRoundDialogOpen, setEditRoundDialogOpen] = useState(false);
+  const [selectedRound, setSelectedRound] = useState<any>(null);
 
   const { data: tournament } = useQuery({
     queryKey: ["/api/tournament/active"],
@@ -48,6 +50,17 @@ export default function TournamentManagement() {
   });
 
   const roundForm = useForm<InsertRound>({
+    resolver: zodResolver(insertRoundSchema),
+    defaultValues: {
+      tournamentId: tournament?.id || 0,
+      courseId: 0,
+      roundNumber: 1,
+      date: new Date().toISOString().split('T')[0],
+      status: "pending",
+    },
+  });
+
+  const editRoundForm = useForm<InsertRound>({
     resolver: zodResolver(insertRoundSchema),
     defaultValues: {
       tournamentId: tournament?.id || 0,
@@ -104,6 +117,28 @@ export default function TournamentManagement() {
     },
   });
 
+  const updateRoundMutation = useMutation({
+    mutationFn: async (data: InsertRound & { id: number }) => {
+      return apiRequest("PUT", `/api/rounds/${data.id}`, data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Round Updated",
+        description: "The tournament round has been updated successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/tournaments", tournament?.id, "rounds"] });
+      setEditRoundDialogOpen(false);
+      editRoundForm.reset();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update round",
+        variant: "destructive",
+      });
+    },
+  });
+
   if (!isAdmin) {
     return (
       <div className="space-y-6">
@@ -129,6 +164,28 @@ export default function TournamentManagement() {
       ...data,
       tournamentId: tournament?.id || 0,
     });
+  };
+
+  const onEditRound = (round: any) => {
+    setSelectedRound(round);
+    editRoundForm.reset({
+      tournamentId: round.tournamentId,
+      courseId: round.courseId,
+      roundNumber: round.roundNumber,
+      date: round.date,
+      status: round.status,
+    });
+    setEditRoundDialogOpen(true);
+  };
+
+  const onUpdateRound = (data: InsertRound) => {
+    if (selectedRound) {
+      updateRoundMutation.mutate({
+        ...data,
+        id: selectedRound.id,
+        tournamentId: tournament?.id || 0,
+      });
+    }
   };
 
   // If no tournament exists, show tournament creation interface
@@ -489,7 +546,7 @@ export default function TournamentManagement() {
                     <Badge variant={round.status === "completed" ? "default" : "secondary"}>
                       {round.status}
                     </Badge>
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" onClick={() => onEditRound(round)}>
                       <Settings className="h-4 w-4" />
                     </Button>
                   </div>
@@ -504,6 +561,85 @@ export default function TournamentManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Round Dialog */}
+      <Dialog open={editRoundDialogOpen} onOpenChange={setEditRoundDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Round {selectedRound?.roundNumber}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={editRoundForm.handleSubmit(onUpdateRound)} className="space-y-4">
+            <div>
+              <Label htmlFor="editRoundNumber">Round Number</Label>
+              <Input
+                id="editRoundNumber"
+                type="number"
+                min="1"
+                {...editRoundForm.register("roundNumber", { valueAsNumber: true })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="editCourseId">Course</Label>
+              <Select
+                value={editRoundForm.watch("courseId")?.toString() || ""}
+                onValueChange={(value) => editRoundForm.setValue("courseId", parseInt(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a course" />
+                </SelectTrigger>
+                <SelectContent>
+                  {courses?.map((course: any) => (
+                    <SelectItem key={course.id} value={course.id.toString()}>
+                      {course.name} - {course.location}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="editDate">Date</Label>
+              <Input
+                id="editDate"
+                type="date"
+                {...editRoundForm.register("date")}
+              />
+            </div>
+            <div>
+              <Label htmlFor="editStatus">Status</Label>
+              <Select
+                value={editRoundForm.watch("status") || "pending"}
+                onValueChange={(value) => editRoundForm.setValue("status", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex space-x-2">
+              <Button
+                type="submit"
+                disabled={updateRoundMutation.isPending}
+                className="flex-1 bg-golf-green hover:bg-golf-green/90"
+              >
+                {updateRoundMutation.isPending ? "Updating..." : "Update Round"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEditRoundDialogOpen(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -44,6 +44,7 @@ export interface IStorage {
   getRoundsByTournament(tournamentId: number): Promise<Round[]>;
   getRound(id: number): Promise<Round | undefined>;
   createRound(round: InsertRound): Promise<Round>;
+  updateRound(id: number, round: Partial<InsertRound>): Promise<Round>;
   updateRoundStatus(id: number, status: string): Promise<Round>;
 
   // Scorecard methods
@@ -195,6 +196,15 @@ export class DatabaseStorage implements IStorage {
       .values(round)
       .returning();
     return newRound;
+  }
+
+  async updateRound(id: number, round: Partial<InsertRound>): Promise<Round> {
+    const [updated] = await db
+      .update(rounds)
+      .set(round)
+      .where(eq(rounds.id, id))
+      .returning();
+    return updated;
   }
 
   async updateRoundStatus(id: number, status: string): Promise<Round> {
