@@ -1,18 +1,30 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, date } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, decimal, date, varchar, jsonb, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
+// Session storage table for Replit Auth
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// User storage table for Replit Auth
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  email: text("email").notNull().unique(),
-  password: text("password").notNull(),
-  firstName: text("first_name").notNull(),
-  lastName: text("last_name").notNull(),
-  handicap: integer("handicap").notNull(),
+  id: varchar("id").primaryKey().notNull(), // Replit user ID (string)
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  handicap: integer("handicap").default(0).notNull(),
   isAdmin: boolean("is_admin").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const tournaments = pgTable("tournaments", {
@@ -64,13 +76,13 @@ export const scorecards = pgTable("scorecards", {
 export const scorecardPlayers = pgTable("scorecard_players", {
   id: serial("id").primaryKey(),
   scorecardId: integer("scorecard_id").references(() => scorecards.id).notNull(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
 });
 
 export const scores = pgTable("scores", {
   id: serial("id").primaryKey(),
   scorecardId: integer("scorecard_id").references(() => scorecards.id).notNull(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   holeId: integer("hole_id").references(() => holes.id).notNull(),
   strokes: integer("strokes").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -79,7 +91,7 @@ export const scores = pgTable("scores", {
 export const payouts = pgTable("payouts", {
   id: serial("id").primaryKey(),
   tournamentId: integer("tournament_id").references(() => tournaments.id).notNull(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   roundId: integer("round_id").references(() => rounds.id), // null for overall tournament payout
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   type: text("type").notNull(), // daily, overall
@@ -176,8 +188,8 @@ export const payoutsRelations = relations(payouts, ({ one }) => ({
 
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
   createdAt: true,
+  updatedAt: true,
   isAdmin: true,
 });
 
@@ -218,6 +230,7 @@ export const loginSchema = z.object({
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UpsertUser = typeof users.$inferInsert;
 export type Tournament = typeof tournaments.$inferSelect;
 export type InsertTournament = z.infer<typeof insertTournamentSchema>;
 export type Course = typeof courses.$inferSelect;
