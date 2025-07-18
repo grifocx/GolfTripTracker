@@ -219,6 +219,13 @@ server/
 - Added visual confirmation for tournament-specific operations
 - Implemented comprehensive status management (draft/in-progress/completed)
 
+### Round Creation Enhancement (July 18, 2025)
+- Implemented flexible round creation with tournament selection in dialog
+- Moved round creation workflow to be independent of tournament pre-selection
+- Enhanced data display to show tournament context with each round
+- Added dynamic UI that adapts based on tournament selection state
+- Improved user experience with intuitive tournament-to-round association
+
 ### Data Purge & Testing Capabilities
 - Built-in database purge functionality for fresh testing environments
 - Preserved critical data (users, courses) while clearing tournament-specific data

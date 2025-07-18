@@ -208,6 +208,15 @@ The application follows a modern full-stack architecture with clear separation o
 - Updated all database queries and mutations to work with selected tournament paradigm
 - Enhanced round management section headers to show which tournament's rounds are displayed
 
+### July 18, 2025 - Round Creation with Tournament Selection
+- Implemented tournament selector dropdown within round creation dialog
+- Moved "Add Round" button to be always available (not tied to specific tournament selection)
+- Updated round creation dialog to allow selecting any tournament from dropdown
+- Enhanced rounds display to show tournament name alongside course and date information
+- Added dynamic section headers that adapt based on tournament selection context
+- Improved data fetching to show all rounds with proper tournament filtering
+- Fixed user workflow: user can now select which tournament to add rounds to directly in the dialog
+
 ### Database Purge & Fresh Testing Setup
 - Implemented database purge functionality for fresh testing
 - Preserved users and courses while clearing all tournament-related data

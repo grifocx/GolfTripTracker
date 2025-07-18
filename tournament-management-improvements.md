@@ -107,6 +107,23 @@ This document outlines the comprehensive improvements made to the BroGolfTracker
 - **Reduced Confusion**: Clear visual hierarchy and relationships
 - **Consistent Experience**: Tournament context maintained throughout session
 
+## Final Implementation - Tournament Selection in Round Creation
+
+### Latest Enhancement (July 18, 2025)
+**Problem**: User needed ability to select tournament from dropdown when creating rounds, rather than being tied to pre-selected tournament.
+
+**Solution**:
+- Added tournament selector dropdown directly in round creation dialog
+- Made "Add Round" button always available (not dependent on tournament selection)
+- Updated rounds display to show tournament name with each round
+- Enhanced data fetching to show all rounds with proper tournament association
+
+### Key User Experience Improvements
+- **Flexible Workflow**: Users can now create rounds for any tournament without pre-selecting
+- **Clear Association**: Each round clearly shows which tournament it belongs to
+- **Intuitive Interface**: Tournament selection happens at the point of need (round creation)
+- **Dynamic Display**: Rounds section adapts based on whether a tournament is selected for filtering
+
 ## Implementation Quality
 
 ### Code Quality

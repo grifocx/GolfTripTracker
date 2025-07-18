@@ -109,24 +109,25 @@ This guide provides a comprehensive end-to-end testing script for administrators
 **Test Duration: 20 minutes**
 
 1. **Create Tournament Rounds**
-   - Ensure your tournament is selected in the dropdown
-   - Verify the "Rounds for [Tournament Name]" section shows your tournament
-   - Click "Add Round" for each day of the tournament
+   - Click "Add Round" button (always available regardless of tournament selection)
    - In the round creation dialog, verify:
-     - Dialog title shows "Create New Round for [Tournament Name]"
-     - Tournament field is pre-filled and disabled (shows context)
-     - Tournament dates are displayed for reference
+     - Dialog title shows "Create New Round"
+     - Tournament dropdown allows selection of any tournament
+     - All tournaments are available in the dropdown with status indicators
    - For each round:
+     - Select tournament from dropdown
      - Set round number (1, 2, 3, etc.)
      - Set date within tournament date range
      - Select course (should match tournament course)
-   - Submit and verify rounds appear in the tournament-specific list
+   - Submit and verify rounds appear in the rounds list with tournament name displayed
 
 2. **Round Context Verification**
-   - Verify round list shows "Rounds for [Tournament Name]" header
-   - Check that only rounds for the selected tournament are displayed
-   - Test switching tournament selection to see how round display changes
-   - Confirm round creation is contextual to selected tournament
+   - Verify round list shows dynamic header based on tournament selection
+   - When tournament selected: "Rounds for [Tournament Name]"
+   - When no tournament selected: "All Tournament Rounds"
+   - Each round displays tournament name, course, and date
+   - Test switching tournament selection to see filtering behavior
+   - Confirm round creation allows independent tournament selection
 
 3. **Scorecard Setup**
    - For each round, create scorecards
