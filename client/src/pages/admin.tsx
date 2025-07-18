@@ -35,6 +35,8 @@ export default function Admin() {
       location: "",
       par: 72,
       yardage: 6500,
+      courseRating: 72.0,
+      slopeRating: 113,
     },
   });
 
@@ -196,6 +198,35 @@ export default function Admin() {
                         <p className="text-sm text-red-600">{courseForm.formState.errors.yardage.message}</p>
                       )}
                     </div>
+                    <div>
+                      <Label htmlFor="courseRating">Course Rating</Label>
+                      <Input
+                        id="courseRating"
+                        type="number"
+                        step="0.1"
+                        min="65.0"
+                        max="80.0"
+                        placeholder="72.5"
+                        {...courseForm.register("courseRating", { valueAsNumber: true })}
+                      />
+                      {courseForm.formState.errors.courseRating && (
+                        <p className="text-sm text-red-600">{courseForm.formState.errors.courseRating.message}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="slopeRating">Slope Rating</Label>
+                      <Input
+                        id="slopeRating"
+                        type="number"
+                        min="55"
+                        max="155"
+                        placeholder="113"
+                        {...courseForm.register("slopeRating", { valueAsNumber: true })}
+                      />
+                      {courseForm.formState.errors.slopeRating && (
+                        <p className="text-sm text-red-600">{courseForm.formState.errors.slopeRating.message}</p>
+                      )}
+                    </div>
                   </div>
                   <Button
                     type="submit"
@@ -224,6 +255,8 @@ export default function Admin() {
                   <div className="flex items-center gap-2">
                     <Badge variant="outline">Par {course.par}</Badge>
                     <Badge variant="outline">{course.yardage} yards</Badge>
+                    <Badge variant="outline">Rating {course.courseRating}</Badge>
+                    <Badge variant="outline">Slope {course.slopeRating}</Badge>
                     <Button variant="ghost" size="sm">
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -262,7 +295,7 @@ export default function Admin() {
                     <div>
                       <p className="font-medium">{user.username}</p>
                       <p className="text-sm text-gray-600">
-                        {user.isAdmin ? "Administrator" : "Player"}
+                        {user.isAdmin ? "Administrator" : "Player"} • HCP: {user.handicapIndex}
                       </p>
                     </div>
                   </div>

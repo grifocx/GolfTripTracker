@@ -9,6 +9,13 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, asc, sql } from "drizzle-orm";
+import { 
+  calculateCourseHandicap, 
+  getStrokesForHole, 
+  calculateNetStrokes,
+  calculateLeaderboardPositions,
+  formatScoreToPar
+} from "./golfUtils";
 
 export interface IStorage {
   // User methods
@@ -271,12 +278,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async saveScore(score: InsertScore): Promise<Score> {
+    // Calculate net strokes using proper golf handicap system
+    const netStrokes = await this.calculateNetStrokesForScore(score);
+    
     const [newScore] = await db
       .insert(scores)
-      .values(score)
+      .values({
+        ...score,
+        netStrokes
+      })
       .onConflictDoUpdate({
         target: [scores.scorecardId, scores.userId, scores.holeId],
-        set: { strokes: score.strokes },
+        set: { 
+          strokes: score.strokes,
+          netStrokes: netStrokes
+        },
       })
       .returning();
     return newScore;
@@ -290,26 +306,41 @@ export class DatabaseStorage implements IStorage {
     return savedScores;
   }
 
+  private async calculateNetStrokesForScore(score: InsertScore): Promise<number> {
+    // Get user, hole, and course data
+    const [user] = await db.select().from(users).where(eq(users.id, score.userId));
+    const [hole] = await db.select().from(holes).where(eq(holes.id, score.holeId));
+    const [course] = await db.select().from(courses).where(eq(courses.id, hole.courseId));
+    
+    if (!user || !hole || !course) {
+      throw new Error("Unable to calculate net strokes: missing user, hole, or course data");
+    }
+
+    // Calculate course handicap
+    const courseHandicap = calculateCourseHandicap(
+      parseFloat(user.handicapIndex.toString()),
+      course.slopeRating,
+      parseFloat(course.courseRating.toString()),
+      course.par
+    );
+
+    // Calculate strokes received on this hole
+    const strokesReceived = getStrokesForHole(courseHandicap, hole.handicapRanking);
+
+    // Calculate net strokes
+    return calculateNetStrokes(score.strokes, strokesReceived);
+  }
+
   async getTournamentLeaderboard(tournamentId: number): Promise<any[]> {
-    // Get the lowest handicap in the tournament
-    const lowestHandicapResult = await db
-      .select({ minHandicap: sql<number>`min(${users.handicap})` })
-      .from(users)
-      .innerJoin(scorecardPlayers, eq(users.id, scorecardPlayers.userId))
-      .innerJoin(scorecards, eq(scorecardPlayers.scorecardId, scorecards.id))
-      .innerJoin(rounds, eq(scorecards.roundId, rounds.id))
-      .where(eq(rounds.tournamentId, tournamentId));
-
-    const lowestHandicap = lowestHandicapResult[0]?.minHandicap || 0;
-
-    // Calculate leaderboard with net scores
+    // Get leaderboard using proper net scores
     const leaderboard = await db
       .select({
         userId: users.id,
         firstName: users.firstName,
         lastName: users.lastName,
-        handicap: users.handicap,
+        handicapIndex: users.handicapIndex,
         totalStrokes: sql<number>`sum(${scores.strokes})`,
+        totalNetStrokes: sql<number>`sum(${scores.netStrokes})`,
         roundsPlayed: sql<number>`count(distinct ${rounds.id})`,
       })
       .from(users)
@@ -318,49 +349,40 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(rounds, eq(scorecards.roundId, rounds.id))
       .innerJoin(scores, and(eq(scores.userId, users.id), eq(scores.scorecardId, scorecards.id)))
       .where(eq(rounds.tournamentId, tournamentId))
-      .groupBy(users.id, users.firstName, users.lastName, users.handicap)
-      .orderBy(sql`sum(${scores.strokes}) + (${users.handicap} - ${lowestHandicap})`);
+      .groupBy(users.id, users.firstName, users.lastName, users.handicapIndex)
+      .orderBy(sql`sum(${scores.netStrokes})`);
 
-    // Add calculated fields
+    // Add calculated fields and positions
     return leaderboard.map((player, index) => ({
       ...player,
-      netScore: (player.totalStrokes || 0) + (player.handicap - lowestHandicap),
+      netScore: player.totalNetStrokes || 0,
       position: index + 1,
       name: `${player.firstName} ${player.lastName}`,
     }));
   }
 
   async getDailyLeaderboard(roundId: number): Promise<any[]> {
-    // Get the lowest handicap for the round
-    const lowestHandicapResult = await db
-      .select({ minHandicap: sql<number>`min(${users.handicap})` })
-      .from(users)
-      .innerJoin(scorecardPlayers, eq(users.id, scorecardPlayers.userId))
-      .innerJoin(scorecards, eq(scorecardPlayers.scorecardId, scorecards.id))
-      .where(eq(scorecards.roundId, roundId));
-
-    const lowestHandicap = lowestHandicapResult[0]?.minHandicap || 0;
-
-    // Calculate daily leaderboard
+    // Calculate daily leaderboard using proper net scores
     const leaderboard = await db
       .select({
         userId: users.id,
         firstName: users.firstName,
         lastName: users.lastName,
-        handicap: users.handicap,
+        handicapIndex: users.handicapIndex,
         totalStrokes: sql<number>`sum(${scores.strokes})`,
+        totalNetStrokes: sql<number>`sum(${scores.netStrokes})`,
       })
       .from(users)
       .innerJoin(scorecardPlayers, eq(users.id, scorecardPlayers.userId))
       .innerJoin(scorecards, eq(scorecardPlayers.scorecardId, scorecards.id))
       .innerJoin(scores, and(eq(scores.userId, users.id), eq(scores.scorecardId, scorecards.id)))
       .where(eq(scorecards.roundId, roundId))
-      .groupBy(users.id, users.firstName, users.lastName, users.handicap)
-      .orderBy(sql`sum(${scores.strokes}) + (${users.handicap} - ${lowestHandicap})`);
+      .groupBy(users.id, users.firstName, users.lastName, users.handicapIndex)
+      .orderBy(sql`sum(${scores.netStrokes})`);
 
     return leaderboard.map((player, index) => ({
       ...player,
-      netScore: (player.totalStrokes || 0) + (player.handicap - lowestHandicap),
+      netScore: player.totalNetStrokes || 0,
       position: index + 1,
       name: `${player.firstName} ${player.lastName}`,
     }));

@@ -201,15 +201,19 @@ export default function Login() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="handicap">Handicap</Label>
+                  <Label htmlFor="handicapIndex">Handicap Index</Label>
                   <Input
-                    id="handicap"
+                    id="handicapIndex"
                     type="number"
-                    {...registerForm.register("handicap", { valueAsNumber: true })}
+                    step="0.1"
+                    min="0"
+                    max="54"
+                    placeholder="18.5"
+                    {...registerForm.register("handicapIndex", { valueAsNumber: true })}
                     className="w-full"
                   />
-                  {registerForm.formState.errors.handicap && (
-                    <p className="text-sm text-red-600">{registerForm.formState.errors.handicap.message}</p>
+                  {registerForm.formState.errors.handicapIndex && (
+                    <p className="text-sm text-red-600">{registerForm.formState.errors.handicapIndex.message}</p>
                   )}
                 </div>
                 <Button

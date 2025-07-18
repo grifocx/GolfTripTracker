@@ -101,10 +101,10 @@ export default function Players() {
                       
                       <div className="grid grid-cols-2 gap-4 text-sm mb-3">
                         <div>
-                          <span className="text-gray-500">Handicap:</span>
+                          <span className="text-gray-500">Handicap Index:</span>
                           <div className="font-semibold flex items-center">
                             <Target className="h-3 w-3 mr-1" />
-                            {player.handicap}
+                            {player.handicapIndex}
                           </div>
                         </div>
                         {stats && (

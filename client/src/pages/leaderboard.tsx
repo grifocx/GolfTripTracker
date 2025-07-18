@@ -208,7 +208,7 @@ export default function Leaderboard() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">
-                        {player.handicap}
+                        {player.handicapIndex}
                       </td>
                       {leaderboardType === "overall" && (
                         <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">

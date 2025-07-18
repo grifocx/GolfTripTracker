@@ -10,7 +10,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
-  handicap: integer("handicap").notNull(),
+  handicapIndex: decimal("handicap_index", { precision: 4, scale: 1 }).notNull(), // Official handicap index
   isAdmin: boolean("is_admin").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -33,6 +33,8 @@ export const courses = pgTable("courses", {
   location: text("location").notNull(),
   par: integer("par").notNull(),
   yardage: integer("yardage").notNull(),
+  courseRating: decimal("course_rating", { precision: 4, scale: 1 }).notNull(), // e.g., 72.5
+  slopeRating: integer("slope_rating").notNull().default(113), // Standard slope is 113
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -74,6 +76,7 @@ export const scores = pgTable("scores", {
   userId: integer("user_id").references(() => users.id).notNull(),
   holeId: integer("hole_id").references(() => holes.id).notNull(),
   strokes: integer("strokes").notNull(),
+  netStrokes: integer("net_strokes").notNull(), // Gross strokes minus handicap strokes for this hole
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -269,6 +272,7 @@ export const insertScorecardSchema = createInsertSchema(scorecards).omit({
 export const insertScoreSchema = createInsertSchema(scores).omit({
   id: true,
   createdAt: true,
+  netStrokes: true, // netStrokes calculated automatically
 });
 
 export const insertAchievementSchema = createInsertSchema(achievements).omit({
