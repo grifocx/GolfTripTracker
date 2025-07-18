@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import { ErrorBoundary } from "@/components/error-boundary";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import NotFound from "@/pages/not-found";
@@ -11,28 +12,34 @@ import NotFound from "@/pages/not-found";
 function AppContent() {
   const { user } = useAuth();
 
+  console.log("AppContent render - user:", user);
+
   if (!user) {
     return <Login />;
   }
 
   return (
-    <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route component={NotFound} />
-    </Switch>
+    <ErrorBoundary>
+      <Switch>
+        <Route path="/" component={Dashboard} />
+        <Route component={NotFound} />
+      </Switch>
+    </ErrorBoundary>
   );
 }
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <Toaster />
-          <AppContent />
-        </AuthProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <AuthProvider>
+            <Toaster />
+            <AppContent />
+          </AuthProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

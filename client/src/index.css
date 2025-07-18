@@ -65,6 +65,39 @@
     @apply font-sans antialiased;
     background-color: var(--golf-light);
     color: var(--golf-dark);
+    /* Safari specific fixes */
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Safari form styling fixes */
+  input, textarea, button {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  }
+
+  /* Safari flexbox fixes */
+  .flex {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+  }
+
+  /* Safari viewport fixes */
+  html, body {
+    height: 100%;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+
+  #root {
+    height: 100%;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
   }
 }
 

@@ -50,7 +50,7 @@ export function DesktopSidebar({ currentView, onViewChange }: NavigationProps) {
   const navItems = [
     { id: "leaderboard", label: "Leaderboard", icon: Trophy },
     { id: "daily", label: "Daily Results", icon: Calendar },
-    { id: "score-entry", label: "Score Entry", icon: Volleyball, adminOnly: true },
+    { id: "score-entry", label: "Score Entry", icon: Target, adminOnly: true },
     { id: "players", label: "Players", icon: Users },
     { id: "courses", label: "Courses", icon: MapPin, adminOnly: true },
     { id: "rounds", label: "Rounds", icon: List, adminOnly: true },

@@ -10,21 +10,37 @@ export default function Dashboard() {
   const { user } = useAuth();
   const [currentView, setCurrentView] = useState("leaderboard");
 
+  console.log("Dashboard render - user:", user, "currentView:", currentView);
+
+  if (!user) {
+    console.log("Dashboard: No user, redirecting to login");
+    return null;
+  }
+
   const renderView = () => {
-    switch (currentView) {
-      case "leaderboard":
-      case "daily":
-        return <Leaderboard />;
-      case "score-entry":
-        return <ScoreEntry />;
-      case "players":
-        return <Players />;
-      case "admin":
-      case "courses":
-      case "rounds":
-        return <Admin />;
-      default:
-        return <Leaderboard />;
+    try {
+      switch (currentView) {
+        case "leaderboard":
+        case "daily":
+          return <Leaderboard />;
+        case "score-entry":
+          return <ScoreEntry />;
+        case "players":
+          return <Players />;
+        case "admin":
+        case "courses":
+        case "rounds":
+          return <Admin />;
+        default:
+          return <Leaderboard />;
+      }
+    } catch (error) {
+      console.error("Error rendering view:", error);
+      return (
+        <div className="p-4 text-center">
+          <p className="text-red-600">Error loading view. Please try refreshing.</p>
+        </div>
+      );
     }
   };
 
