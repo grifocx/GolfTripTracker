@@ -4,11 +4,16 @@ import type { User, InsertUser } from "@shared/schema";
 export const authApi = {
   login: async (username: string, password: string): Promise<User> => {
     console.log("Making login request with:", { username, password: "***" });
-    const response = await apiRequest("POST", "/api/auth/login", { username, password });
-    console.log("Login response status:", response.status);
-    const result = await response.json();
-    console.log("Login response data:", result);
-    return result;
+    try {
+      const response = await apiRequest("POST", "/api/auth/login", { username, password });
+      console.log("Login response status:", response.status);
+      const result = await response.json();
+      console.log("Login response data:", result);
+      return result;
+    } catch (error) {
+      console.error("Login API error:", error);
+      throw new Error(error instanceof Error ? error.message : "Login failed");
+    }
   },
 
   register: async (userData: InsertUser): Promise<User> => {

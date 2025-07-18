@@ -21,14 +21,12 @@ function AppContent() {
   }
 
   return (
-    <ErrorBoundary>
-      <Switch>
-        <Route path="/" component={Dashboard} />
-        <Route path="/tournament-setup" component={TournamentSetup} />
-        <Route path="/course-management" component={CourseManagement} />
-        <Route component={NotFound} />
-      </Switch>
-    </ErrorBoundary>
+    <Switch>
+      <Route path="/" component={Dashboard} />
+      <Route path="/tournament-setup" component={TournamentSetup} />
+      <Route path="/course-management" component={CourseManagement} />
+      <Route component={NotFound} />
+    </Switch>
   );
 }
 

@@ -133,7 +133,6 @@ export class DatabaseStorage implements IStorage {
         firstName: users.firstName,
         lastName: users.lastName,
         handicapIndex: users.handicapIndex,
-        handicap: users.handicap,
         isAdmin: users.isAdmin,
         createdAt: users.createdAt,
       })

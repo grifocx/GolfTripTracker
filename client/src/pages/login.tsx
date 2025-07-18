@@ -33,7 +33,7 @@ export default function Login() {
       password: "",
       firstName: "",
       lastName: "",
-      handicap: 0,
+      handicapIndex: 0,
     },
   });
 
