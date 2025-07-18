@@ -1,10 +1,10 @@
 import { 
-  users, tournaments, courses, holes, rounds, scorecards, scorecardPlayers, scores, payouts,
+  users, tournaments, tournamentPlayers, courses, holes, rounds, scorecards, scorecardPlayers, scores, payouts,
   achievements, userAchievements,
   type User, type InsertUser, type Tournament, type InsertTournament,
   type Course, type InsertCourse, type Hole, type InsertHole,
   type Round, type InsertRound, type Scorecard, type InsertScorecard,
-  type ScorecardPlayer, type Score, type InsertScore, type Payout,
+  type ScorecardPlayer, type TournamentPlayer, type Score, type InsertScore, type Payout,
   type Achievement, type InsertAchievement, type UserAchievement, type InsertUserAchievement
 } from "@shared/schema";
 import { db } from "./db";
@@ -26,8 +26,11 @@ export interface IStorage {
 
   // Tournament methods
   getActiveTournament(): Promise<Tournament | undefined>;
+  getAllTournaments(): Promise<Tournament[]>;
   createTournament(tournament: InsertTournament): Promise<Tournament>;
   updateTournament(id: number, tournament: Partial<InsertTournament>): Promise<Tournament>;
+  addPlayersToTournament(tournamentId: number, playerIds: number[]): Promise<void>;
+  getTournamentPlayers(tournamentId: number): Promise<User[]>;
 
   // Course methods
   getAllCourses(): Promise<Course[]>;
@@ -105,6 +108,38 @@ export class DatabaseStorage implements IStorage {
       .where(eq(tournaments.isActive, true))
       .orderBy(desc(tournaments.createdAt));
     return tournament || undefined;
+  }
+
+  async getAllTournaments(): Promise<Tournament[]> {
+    return await db.select().from(tournaments).orderBy(desc(tournaments.createdAt));
+  }
+
+  async addPlayersToTournament(tournamentId: number, playerIds: number[]): Promise<void> {
+    const values = playerIds.map(playerId => ({
+      tournamentId,
+      userId: playerId,
+    }));
+    await db.insert(tournamentPlayers).values(values);
+  }
+
+  async getTournamentPlayers(tournamentId: number): Promise<User[]> {
+    const result = await db
+      .select({
+        id: users.id,
+        username: users.username,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        handicapIndex: users.handicapIndex,
+        handicap: users.handicap,
+        isAdmin: users.isAdmin,
+        createdAt: users.createdAt,
+      })
+      .from(tournamentPlayers)
+      .innerJoin(users, eq(tournamentPlayers.userId, users.id))
+      .where(eq(tournamentPlayers.tournamentId, tournamentId));
+    
+    return result;
   }
 
   async createTournament(tournament: InsertTournament): Promise<Tournament> {

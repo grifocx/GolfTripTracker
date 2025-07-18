@@ -27,6 +27,13 @@ export const tournaments = pgTable("tournaments", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const tournamentPlayers = pgTable("tournament_players", {
+  id: serial("id").primaryKey(),
+  tournamentId: integer("tournament_id").references(() => tournaments.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const courses = pgTable("courses", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -123,6 +130,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   scores: many(scores),
   payouts: many(payouts),
   userAchievements: many(userAchievements),
+  tournamentPlayers: many(tournamentPlayers),
 }));
 
 export const tournamentsRelations = relations(tournaments, ({ one, many }) => ({
@@ -132,6 +140,18 @@ export const tournamentsRelations = relations(tournaments, ({ one, many }) => ({
   }),
   rounds: many(rounds),
   payouts: many(payouts),
+  tournamentPlayers: many(tournamentPlayers),
+}));
+
+export const tournamentPlayersRelations = relations(tournamentPlayers, ({ one }) => ({
+  tournament: one(tournaments, {
+    fields: [tournamentPlayers.tournamentId],
+    references: [tournaments.id],
+  }),
+  user: one(users, {
+    fields: [tournamentPlayers.userId],
+    references: [users.id],
+  }),
 }));
 
 export const coursesRelations = relations(courses, ({ many }) => ({
@@ -304,6 +324,7 @@ export type InsertRound = z.infer<typeof insertRoundSchema>;
 export type Scorecard = typeof scorecards.$inferSelect;
 export type InsertScorecard = z.infer<typeof insertScorecardSchema>;
 export type ScorecardPlayer = typeof scorecardPlayers.$inferSelect;
+export type TournamentPlayer = typeof tournamentPlayers.$inferSelect;
 export type Score = typeof scores.$inferSelect;
 export type InsertScore = z.infer<typeof insertScoreSchema>;
 export type Payout = typeof payouts.$inferSelect;

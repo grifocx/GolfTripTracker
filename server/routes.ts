@@ -79,6 +79,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Tournament routes
+  app.get("/api/tournaments", async (req: Request, res: Response) => {
+    try {
+      const tournaments = await storage.getAllTournaments();
+      res.json(tournaments);
+    } catch (error) {
+      console.error("Error fetching tournaments:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.get("/api/tournament/active", async (req: Request, res: Response) => {
     try {
       const tournament = await storage.getActiveTournament();
@@ -87,6 +97,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(tournament);
     } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/tournaments/:id/players", async (req: Request, res: Response) => {
+    try {
+      const tournamentId = parseInt(req.params.id);
+      const players = await storage.getTournamentPlayers(tournamentId);
+      res.json(players);
+    } catch (error) {
+      console.error("Error fetching tournament players:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/tournaments/:id/players", async (req: Request, res: Response) => {
+    try {
+      const tournamentId = parseInt(req.params.id);
+      const { playerIds } = req.body;
+      
+      if (!Array.isArray(playerIds)) {
+        return res.status(400).json({ message: "playerIds must be an array" });
+      }
+      
+      await storage.addPlayersToTournament(tournamentId, playerIds);
+      res.status(201).json({ message: "Players added successfully" });
+    } catch (error) {
+      console.error("Error adding players to tournament:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/tournaments/:id/rounds", async (req: Request, res: Response) => {
+    try {
+      const tournamentId = parseInt(req.params.id);
+      const rounds = await storage.getRoundsByTournament(tournamentId);
+      res.json(rounds);
+    } catch (error) {
+      console.error("Error fetching tournament rounds:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });

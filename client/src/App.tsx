@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { ErrorBoundary } from "@/components/error-boundary";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
+import TournamentSetup from "@/pages/tournament-setup";
 import NotFound from "@/pages/not-found";
 
 function AppContent() {
@@ -22,6 +23,7 @@ function AppContent() {
     <ErrorBoundary>
       <Switch>
         <Route path="/" component={Dashboard} />
+        <Route path="/tournament-setup" component={TournamentSetup} />
         <Route component={NotFound} />
       </Switch>
     </ErrorBoundary>
