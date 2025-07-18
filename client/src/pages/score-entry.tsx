@@ -293,6 +293,7 @@ export default function ScoreEntry() {
                       <li>• Maximum score per hole is double par + handicap strokes</li>
                       <li>• Handicap strokes are assigned based on hole difficulty (1-18)</li>
                       <li>• Net scores automatically calculated using proper golf handicap system</li>
+                      <li>• Players with the same net score share the same position</li>
                     </ul>
                   </div>
                 </div>

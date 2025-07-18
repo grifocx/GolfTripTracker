@@ -216,18 +216,9 @@ export default function Leaderboard() {
                         </td>
                       )}
                       <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <div className="flex items-center justify-center space-x-2">
-                          <span className={cn("text-lg font-bold", getScoreColor(player.netScore))}>
-                            {formatScore(player.netScore)}
-                          </span>
-                          {player.tieBreaker && (
-                            <span className="text-xs" title={`Tie-breaker: ${player.tieBreaker}`}>
-                              {player.tieBreaker === 'rock' ? '🪨' : 
-                               player.tieBreaker === 'paper' ? '📄' : 
-                               player.tieBreaker === 'scissors' ? '✂️' : ''}
-                            </span>
-                          )}
-                        </div>
+                        <span className={cn("text-lg font-bold", getScoreColor(player.netScore))}>
+                          {formatScore(player.netScore)}
+                        </span>
                       </td>
                     </tr>
                   ))}

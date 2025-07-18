@@ -131,8 +131,8 @@ export function getScoreValidationMessage(
 }
 
 /**
- * Calculate leaderboard position with fun tie-breaking
- * First by net score, then by rock/paper/scissors for tied players
+ * Calculate leaderboard position with standard golf tie-breaking
+ * Players with the same net score share the same position
  */
 export function calculateLeaderboardPositions(
   players: Array<{
@@ -144,52 +144,26 @@ export function calculateLeaderboardPositions(
   userId: number;
   position: number;
   totalNetScore: number;
-  tieBreaker?: string;
 }> {
-  // Sort by net score first
+  // Sort by net score (lower is better)
   const sortedPlayers = players.sort((a, b) => {
-    if (a.totalNetScore !== b.totalNetScore) {
-      return a.totalNetScore - b.totalNetScore;
-    }
-    
-    // For tied players, use rock/paper/scissors tie-breaker
-    // Generate consistent "choice" based on user ID for deterministic results
-    const choices = ['rock', 'paper', 'scissors'];
-    const aChoice = choices[a.userId % 3];
-    const bChoice = choices[b.userId % 3];
-    
-    // Rock beats scissors, scissors beats paper, paper beats rock
-    if (aChoice === bChoice) return 0; // Still tied
-    if (
-      (aChoice === 'rock' && bChoice === 'scissors') ||
-      (aChoice === 'scissors' && bChoice === 'paper') ||
-      (aChoice === 'paper' && bChoice === 'rock')
-    ) {
-      return -1; // a wins
-    }
-    return 1; // b wins
+    return a.totalNetScore - b.totalNetScore;
   });
 
-  // Assign positions and track tie-breakers
+  // Assign positions (handle ties properly)
   const results = [];
   let currentPosition = 1;
   
   for (let i = 0; i < sortedPlayers.length; i++) {
     const player = sortedPlayers[i];
     
-    // Check if this player tied with the previous player on score
-    const hasTie = i > 0 && sortedPlayers[i - 1].totalNetScore === player.totalNetScore;
-    
-    if (hasTie) {
-      // Same position as previous player, but tie-breaker applied
-      const choices = ['rock', 'paper', 'scissors'];
-      const tieBreaker = choices[player.userId % 3];
-      
+    // Check if this player tied with the previous player
+    if (i > 0 && sortedPlayers[i - 1].totalNetScore === player.totalNetScore) {
+      // Same position as previous player
       results.push({
         userId: player.userId,
         position: results[i - 1].position,
         totalNetScore: player.totalNetScore,
-        tieBreaker: tieBreaker,
       });
     } else {
       // New position
@@ -204,16 +178,4 @@ export function calculateLeaderboardPositions(
   }
   
   return results;
-}
-
-/**
- * Get rock/paper/scissors emoji for display
- */
-export function getTieBreakerEmoji(choice: string): string {
-  switch (choice) {
-    case 'rock': return '🪨';
-    case 'paper': return '📄';
-    case 'scissors': return '✂️';
-    default: return '';
-  }
 }
