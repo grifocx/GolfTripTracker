@@ -138,6 +138,17 @@ The application follows a modern full-stack architecture with clear separation o
 - Created deployment documentation and build scripts
 - Confirmed login functionality working across all browsers
 
+### July 18, 2025 - Achievement System & Tournament-Course Association
+- Implemented complete achievement system with 16 different badges across 4 tiers (Bronze, Silver, Gold, Platinum)
+- Created achievements database tables with progress tracking and completion timestamps
+- Built achievement service with automatic milestone detection for scoring, tournament, streak, and special achievements
+- Added achievements page with progress tracking, statistics, and filtering by category
+- Updated navigation to include achievements/badges section
+- Added tournament-course association: tournaments now require a specific golf course selection
+- Updated database schema to include courseId foreign key in tournaments table
+- Enhanced tournament creation form with course selection dropdown
+- Updated all related database relations and API endpoints
+
 ### Deployment Ready
 - Production build process configured with frontend/backend compilation
 - Database schema complete with test data

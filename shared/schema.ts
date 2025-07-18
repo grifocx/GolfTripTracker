@@ -18,6 +18,7 @@ export const users = pgTable("users", {
 export const tournaments = pgTable("tournaments", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  courseId: integer("course_id").references(() => courses.id).notNull(),
   startDate: date("start_date").notNull(),
   endDate: date("end_date").notNull(),
   dailyBuyIn: decimal("daily_buy_in", { precision: 10, scale: 2 }).notNull(),
@@ -121,7 +122,11 @@ export const usersRelations = relations(users, ({ many }) => ({
   userAchievements: many(userAchievements),
 }));
 
-export const tournamentsRelations = relations(tournaments, ({ many }) => ({
+export const tournamentsRelations = relations(tournaments, ({ one, many }) => ({
+  course: one(courses, {
+    fields: [tournaments.courseId],
+    references: [courses.id],
+  }),
   rounds: many(rounds),
   payouts: many(payouts),
 }));
@@ -129,6 +134,7 @@ export const tournamentsRelations = relations(tournaments, ({ many }) => ({
 export const coursesRelations = relations(courses, ({ many }) => ({
   holes: many(holes),
   rounds: many(rounds),
+  tournaments: many(tournaments),
 }));
 
 export const holesRelations = relations(holes, ({ one, many }) => ({
@@ -234,6 +240,8 @@ export const insertUserSchema = createInsertSchema(users).omit({
 export const insertTournamentSchema = createInsertSchema(tournaments).omit({
   id: true,
   createdAt: true,
+}).extend({
+  courseId: z.number().min(1, "Course is required"),
 });
 
 export const insertCourseSchema = createInsertSchema(courses).omit({

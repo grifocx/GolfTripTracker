@@ -64,11 +64,12 @@ export default function Admin() {
     resolver: zodResolver(insertTournamentSchema),
     defaultValues: {
       name: "",
+      courseId: 0,
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date().toISOString().split('T')[0],
       dailyBuyIn: 0,
       overallBuyIn: 0,
-      status: "active",
+      isActive: true,
     },
   });
 
@@ -205,6 +206,27 @@ export default function Admin() {
                       />
                       {tournamentForm.formState.errors.name && (
                         <p className="text-sm text-red-600">{tournamentForm.formState.errors.name.message}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="courseId">Golf Course</Label>
+                      <Select
+                        value={tournamentForm.watch("courseId")?.toString() || ""}
+                        onValueChange={(value) => tournamentForm.setValue("courseId", parseInt(value))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a golf course" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {courses?.map((course: any) => (
+                            <SelectItem key={course.id} value={course.id.toString()}>
+                              {course.name} - {course.location}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {tournamentForm.formState.errors.courseId && (
+                        <p className="text-sm text-red-600">{tournamentForm.formState.errors.courseId.message}</p>
                       )}
                     </div>
                     <div className="grid grid-cols-2 gap-4">
