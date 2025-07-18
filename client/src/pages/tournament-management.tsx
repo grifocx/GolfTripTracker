@@ -35,10 +35,15 @@ export default function TournamentManagement() {
   const [selectedTournamentId, setSelectedTournamentId] = useState<number | null>(null);
   const selectedTournament = tournaments?.find(t => t.id === selectedTournamentId) || tournaments?.[0];
 
-  const { data: rounds } = useQuery({
-    queryKey: ["/api/tournaments", selectedTournament?.id, "rounds"],
-    enabled: !!selectedTournament?.id,
+  // Get all rounds for all tournaments
+  const { data: allRounds } = useQuery({
+    queryKey: ["/api/rounds"],
   });
+
+  // Filter rounds based on selected tournament
+  const rounds = selectedTournament 
+    ? allRounds?.filter(round => round.tournamentId === selectedTournament.id)
+    : allRounds;
 
   const tournamentForm = useForm<InsertTournament>({
     resolver: zodResolver(insertTournamentSchema),
@@ -57,7 +62,7 @@ export default function TournamentManagement() {
   const roundForm = useForm<InsertRound>({
     resolver: zodResolver(insertRoundSchema),
     defaultValues: {
-      tournamentId: selectedTournament?.id || 0,
+      tournamentId: 0,
       courseId: 0,
       roundNumber: 1,
       date: new Date().toISOString().split('T')[0],
@@ -109,7 +114,7 @@ export default function TournamentManagement() {
         title: "Round Created",
         description: "The tournament round has been created successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/tournaments", selectedTournament?.id, "rounds"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/rounds"] });
       setNewRoundDialogOpen(false);
       roundForm.reset();
     },
@@ -619,14 +624,21 @@ export default function TournamentManagement() {
       </Card>
 
       {/* Tournament Rounds */}
-      {selectedTournament && (
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
-              <CardTitle>Rounds for "{selectedTournament?.name}"</CardTitle>
+              <CardTitle>
+                {selectedTournament 
+                  ? `Rounds for "${selectedTournament.name}"` 
+                  : "All Tournament Rounds"
+                }
+              </CardTitle>
               <p className="text-sm text-gray-600 mt-1">
-                Manage tournament rounds and schedule
+                {selectedTournament 
+                  ? "Manage rounds for the selected tournament" 
+                  : "View and manage rounds from all tournaments"
+                }
               </p>
             </div>
             <Dialog open={newRoundDialogOpen} onOpenChange={setNewRoundDialogOpen}>
@@ -638,21 +650,29 @@ export default function TournamentManagement() {
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Create New Round for "{selectedTournament?.name}"</DialogTitle>
+                  <DialogTitle>Create New Round</DialogTitle>
                   <p className="text-sm text-gray-600 mt-2">
-                    Adding a round to {selectedTournament?.name} ({selectedTournament?.startDate} - {selectedTournament?.endDate})
+                    Add a round to any tournament
                   </p>
                 </DialogHeader>
                 <form onSubmit={roundForm.handleSubmit(onCreateRound)} className="space-y-4">
                   <div>
-                    <Label htmlFor="tournament">Tournament</Label>
-                    <Input
-                      id="tournament"
-                      value={selectedTournament?.name || ""}
-                      disabled
-                      className="bg-gray-50"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">This round will be added to the selected tournament</p>
+                    <Label htmlFor="tournamentId">Tournament</Label>
+                    <Select
+                      value={roundForm.watch("tournamentId")?.toString() || ""}
+                      onValueChange={(value) => roundForm.setValue("tournamentId", parseInt(value))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a tournament" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tournaments?.map((tournament: any) => (
+                          <SelectItem key={tournament.id} value={tournament.id.toString()}>
+                            {tournament.name} - {tournament.status}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <Label htmlFor="roundNumber">Round Number</Label>
@@ -704,25 +724,29 @@ export default function TournamentManagement() {
         <CardContent>
           {rounds && rounds.length > 0 ? (
             <div className="space-y-3">
-              {rounds.map((round: any) => (
-                <div key={round.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Badge variant="outline">Round {round.roundNumber}</Badge>
-                    <div>
-                      <p className="font-medium">{round.course?.name}</p>
-                      <p className="text-sm text-gray-600">{round.date}</p>
+              {rounds.map((round: any) => {
+                const tournament = tournaments?.find(t => t.id === round.tournamentId);
+                return (
+                  <div key={round.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Badge variant="outline">Round {round.roundNumber}</Badge>
+                      <div>
+                        <p className="font-medium">{round.course?.name}</p>
+                        <p className="text-sm text-golf-green font-medium">{tournament?.name}</p>
+                        <p className="text-sm text-gray-600">{round.date}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={round.status === "completed" ? "default" : "secondary"}>
+                        {round.status}
+                      </Badge>
+                      <Button variant="ghost" size="sm" onClick={() => onEditRound(round)}>
+                        <Settings className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={round.status === "completed" ? "default" : "secondary"}>
-                      {round.status}
-                    </Badge>
-                    <Button variant="ghost" size="sm" onClick={() => onEditRound(round)}>
-                      <Settings className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-8 text-gray-500">
@@ -732,8 +756,6 @@ export default function TournamentManagement() {
           )}
         </CardContent>
       </Card>
-
-      )}
 
       {/* Edit Round Dialog */}
       <Dialog open={editRoundDialogOpen} onOpenChange={setEditRoundDialogOpen}>
