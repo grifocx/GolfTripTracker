@@ -16,14 +16,15 @@ import {
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertCourseSchema, insertRoundSchema } from "@shared/schema";
-import type { InsertCourse, InsertRound } from "@shared/schema";
+import { insertCourseSchema, insertRoundSchema, insertTournamentSchema } from "@shared/schema";
+import type { InsertCourse, InsertRound, InsertTournament } from "@shared/schema";
 
 export default function Admin() {
   const { isAdmin } = useAuth();
   const { toast } = useToast();
   const [newCourseDialogOpen, setNewCourseDialogOpen] = useState(false);
   const [newRoundDialogOpen, setNewRoundDialogOpen] = useState(false);
+  const [newTournamentDialogOpen, setNewTournamentDialogOpen] = useState(false);
 
   const { data: tournament } = useQuery({
     queryKey: ["/api/tournament/active"],
@@ -56,6 +57,18 @@ export default function Admin() {
       roundNumber: 1,
       date: new Date().toISOString().split('T')[0],
       status: "pending",
+    },
+  });
+
+  const tournamentForm = useForm<InsertTournament>({
+    resolver: zodResolver(insertTournamentSchema),
+    defaultValues: {
+      name: "",
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: new Date().toISOString().split('T')[0],
+      dailyBuyIn: 0,
+      overallBuyIn: 0,
+      status: "active",
     },
   });
 
@@ -103,6 +116,28 @@ export default function Admin() {
     },
   });
 
+  const createTournamentMutation = useMutation({
+    mutationFn: async (data: InsertTournament) => {
+      return apiRequest("POST", "/api/tournaments", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Tournament Created",
+        description: "Your tournament has been created successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/tournament/active"] });
+      setNewTournamentDialogOpen(false);
+      tournamentForm.reset();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create tournament",
+        variant: "destructive",
+      });
+    },
+  });
+
   if (!isAdmin) {
     return (
       <div className="space-y-6">
@@ -130,6 +165,105 @@ export default function Admin() {
     });
   };
 
+  const onCreateTournament = (data: InsertTournament) => {
+    createTournamentMutation.mutate(data);
+  };
+
+  // If no tournament exists, show tournament creation interface
+  if (!tournament) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold golf-dark">Create Your First Tournament</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8">
+              <Calendar className="h-16 w-16 mx-auto mb-4 text-golf-green" />
+              <h3 className="text-lg font-semibold mb-2">No Tournament Found</h3>
+              <p className="text-gray-600 mb-6">
+                You need to create a tournament first before you can manage rounds and scorecards.
+              </p>
+              <Dialog open={newTournamentDialogOpen} onOpenChange={setNewTournamentDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-golf-green hover:bg-golf-green/90">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Tournament
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Create New Tournament</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={tournamentForm.handleSubmit(onCreateTournament)} className="space-y-4">
+                    <div>
+                      <Label htmlFor="name">Tournament Name</Label>
+                      <Input
+                        id="name"
+                        placeholder="e.g., Annual Golf Trip 2025"
+                        {...tournamentForm.register("name")}
+                      />
+                      {tournamentForm.formState.errors.name && (
+                        <p className="text-sm text-red-600">{tournamentForm.formState.errors.name.message}</p>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="startDate">Start Date</Label>
+                        <Input
+                          id="startDate"
+                          type="date"
+                          {...tournamentForm.register("startDate")}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="endDate">End Date</Label>
+                        <Input
+                          id="endDate"
+                          type="date"
+                          {...tournamentForm.register("endDate")}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="dailyBuyIn">Daily Buy-in ($)</Label>
+                        <Input
+                          id="dailyBuyIn"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          {...tournamentForm.register("dailyBuyIn", { valueAsNumber: true })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="overallBuyIn">Overall Buy-in ($)</Label>
+                        <Input
+                          id="overallBuyIn"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          {...tournamentForm.register("overallBuyIn", { valueAsNumber: true })}
+                        />
+                      </div>
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={createTournamentMutation.isPending}
+                      className="w-full bg-golf-green hover:bg-golf-green/90"
+                    >
+                      {createTournamentMutation.isPending ? "Creating..." : "Create Tournament"}
+                    </Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Tournament Management Header */}
@@ -141,7 +275,7 @@ export default function Admin() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Tournament Settings */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Tournament Settings</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Current Tournament</h3>
               <div className="space-y-3">
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-1">Tournament Name</Label>
