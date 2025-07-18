@@ -3,11 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { Trophy, Calendar, DollarSign, Info } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 export default function Leaderboard() {
   const [leaderboardType, setLeaderboardType] = useState<"overall" | "daily">("overall");
+  const [selectedRoundId, setSelectedRoundId] = useState<number | null>(null);
 
   const { data: tournament } = useQuery({
     queryKey: ["/api/tournament/active"],
@@ -23,11 +26,13 @@ export default function Leaderboard() {
     enabled: !!tournament?.id && leaderboardType === "overall",
   });
 
+  // Auto-select the current round or latest round
   const currentRound = rounds?.find((r: any) => r.status === "in_progress") || rounds?.[rounds.length - 1];
+  const displayRound = selectedRoundId ? rounds?.find((r: any) => r.id === selectedRoundId) : currentRound;
 
   const { data: dailyLeaderboard, isLoading: dailyLoading } = useQuery({
-    queryKey: ["/api/rounds", currentRound?.id, "leaderboard"],
-    enabled: !!currentRound?.id && leaderboardType === "daily",
+    queryKey: ["/api/rounds", displayRound?.id, "leaderboard"],
+    enabled: !!displayRound?.id && leaderboardType === "daily",
   });
 
   const isLoading = leaderboardType === "overall" ? overallLoading : dailyLoading;
@@ -125,24 +130,59 @@ export default function Leaderboard() {
               )}
             >
               <Calendar className="h-4 w-4 mr-2" />
-              Today's Round
+              Daily Round
             </Button>
           </div>
         </CardContent>
       </Card>
 
+      {/* Round Selector for Daily View */}
+      {leaderboardType === "daily" && rounds && rounds.length > 0 && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-4">
+              <Label className="text-sm font-semibold text-gray-700">Select Round:</Label>
+              <Select
+                value={selectedRoundId?.toString() || displayRound?.id?.toString() || ""}
+                onValueChange={(value) => setSelectedRoundId(parseInt(value))}
+              >
+                <SelectTrigger className="w-64">
+                  <SelectValue placeholder="Choose a round" />
+                </SelectTrigger>
+                <SelectContent>
+                  {rounds.map((round: any) => (
+                    <SelectItem key={round.id} value={round.id.toString()}>
+                      Round {round.roundNumber} - {round.date}
+                      {round.status === 'in_progress' && ' (Current)'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Leaderboard */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            {leaderboardType === "overall" ? (
-              <Trophy className="h-5 w-5 text-golf-green" />
-            ) : (
-              <Calendar className="h-5 w-5 text-golf-green" />
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              {leaderboardType === "overall" ? (
+                <Trophy className="h-5 w-5 text-golf-green" />
+              ) : (
+                <Calendar className="h-5 w-5 text-golf-green" />
+              )}
+              <span>
+                {leaderboardType === "overall" ? "Overall Tournament Leaderboard" : 
+                 displayRound ? `Round ${displayRound.roundNumber} Leaderboard` : "Round Leaderboard"}
+              </span>
+            </div>
+            {leaderboardType === "daily" && displayRound && (
+              <div className="text-sm text-gray-600">
+                {displayRound.date} • {displayRound.courseName || 'Course TBD'}
+              </div>
             )}
-            <span>
-              {leaderboardType === "overall" ? "Overall Tournament Leaderboard" : "Today's Round Leaderboard"}
-            </span>
           </CardTitle>
         </CardHeader>
         <CardContent>

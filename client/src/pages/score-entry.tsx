@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Save, CheckCircle, Info } from "lucide-react";
+import { Save, CheckCircle, Info, Calendar } from "lucide-react";
 
 export default function ScoreEntry() {
   const { isAdmin } = useAuth();
@@ -118,77 +118,147 @@ export default function ScoreEntry() {
 
   return (
     <div className="space-y-6">
+      {/* Tournament Context Header */}
+      {tournament && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-golf-dark">{tournament.name}</h1>
+                <p className="text-gray-600">
+                  {tournament.startDate} - {tournament.endDate} | {tournament.location}
+                </p>
+              </div>
+              <div className="text-right">
+                <div className="text-sm text-gray-500">Score Entry</div>
+                <div className="text-xs text-gray-400">Admin Access</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-2xl font-bold text-golf-dark">Score Entry</CardTitle>
-            <div className="text-sm text-gray-600 flex items-center">
-              <Info className="h-4 w-4 mr-1" />
-              Admin access required
-            </div>
-          </div>
+          <CardTitle className="text-xl font-bold text-golf-dark">Select Round & Group</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Round Selection */}
-          <div>
-            <Label className="text-sm font-medium text-gray-700 mb-2">Select Round</Label>
-            <Select
-              value={selectedRoundId?.toString() || ""}
-              onValueChange={(value) => {
-                setSelectedRoundId(parseInt(value));
-                setSelectedScorecardId(null);
-                setScores({});
-              }}
-            >
-              <SelectTrigger className="w-full sm:w-auto">
-                <SelectValue placeholder="Choose a round" />
-              </SelectTrigger>
-              <SelectContent>
-                {rounds?.map((round: any) => (
-                  <SelectItem key={round.id} value={round.id.toString()}>
-                    Round {round.roundNumber} - {round.date}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Scorecard Selection */}
-          {selectedRoundId && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {scorecards?.map((scorecard: any) => (
+          {/* Round Selection with Better Context */}
+          <div className="space-y-4">
+            <Label className="text-sm font-semibold text-gray-700">Tournament Round</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {rounds?.map((round: any) => (
                 <div
-                  key={scorecard.id}
+                  key={round.id}
                   className={`border-2 rounded-lg p-4 cursor-pointer transition-colors ${
-                    selectedScorecardId === scorecard.id
+                    selectedRoundId === round.id
                       ? "border-golf-green bg-golf-green/5"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
-                  onClick={() => setSelectedScorecardId(scorecard.id)}
+                  onClick={() => {
+                    setSelectedRoundId(round.id);
+                    setSelectedScorecardId(null);
+                    setScores({});
+                  }}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-golf-dark">Scorecard {scorecard.name}</h3>
-                    {selectedScorecardId === scorecard.id ? (
+                    <h3 className="font-semibold text-golf-dark">Round {round.roundNumber}</h3>
+                    {selectedRoundId === round.id ? (
                       <CheckCircle className="h-5 w-5 text-golf-green" />
                     ) : (
                       <div className="h-5 w-5 border-2 border-gray-300 rounded-full" />
                     )}
                   </div>
                   <div className="space-y-1 text-sm text-gray-600">
-                    {scorecard.players?.map((player: any) => (
-                      <div key={player.id}>
-                        {player.firstName} {player.lastName} (HCP: {player.handicapIndex})
-                      </div>
-                    ))}
+                    <div className="flex items-center">
+                      <Calendar className="h-4 w-4 mr-1" />
+                      {round.date}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      Course: {round.courseName || 'Not specified'}
+                    </div>
+                    <div className="text-xs">
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        round.status === 'completed' ? 'bg-green-100 text-green-800' :
+                        round.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {round.status}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Group Selection with Better Context */}
+          {selectedRoundId && (
+            <div className="space-y-4">
+              <Label className="text-sm font-semibold text-gray-700">Playing Group</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {scorecards?.map((scorecard: any) => (
+                  <div
+                    key={scorecard.id}
+                    className={`border-2 rounded-lg p-4 cursor-pointer transition-colors ${
+                      selectedScorecardId === scorecard.id
+                        ? "border-golf-green bg-golf-green/5"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                    onClick={() => setSelectedScorecardId(scorecard.id)}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-semibold text-golf-dark">Group {scorecard.name}</h3>
+                      {selectedScorecardId === scorecard.id ? (
+                        <CheckCircle className="h-5 w-5 text-golf-green" />
+                      ) : (
+                        <div className="h-5 w-5 border-2 border-gray-300 rounded-full" />
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <div className="text-xs text-gray-500 mb-2">Players in this group:</div>
+                      {scorecard.players?.map((player: any) => (
+                        <div key={player.id} className="flex items-center space-x-2">
+                          <div className="w-6 h-6 bg-golf-green rounded-full flex items-center justify-center">
+                            <span className="text-white text-xs font-semibold">
+                              {player.firstName[0]}{player.lastName[0]}
+                            </span>
+                          </div>
+                          <div className="text-sm text-gray-700">
+                            {player.firstName} {player.lastName}
+                            <span className="text-gray-500 ml-2">HCP: {player.handicapIndex}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
           {/* Score Entry Grid */}
           {selectedScorecardId && selectedScorecard && holes && (
             <div className="space-y-4">
+              {/* Context Breadcrumb */}
+              <div className="bg-golf-green/5 border border-golf-green/20 rounded-lg p-4">
+                <div className="flex items-center space-x-2 text-sm">
+                  <span className="font-semibold text-golf-dark">Now Entering:</span>
+                  <span className="text-gray-600">{tournament?.name}</span>
+                  <span className="text-gray-400">→</span>
+                  <span className="text-gray-600">
+                    Round {rounds?.find((r: any) => r.id === selectedRoundId)?.roundNumber} 
+                    ({rounds?.find((r: any) => r.id === selectedRoundId)?.date})
+                  </span>
+                  <span className="text-gray-400">→</span>
+                  <span className="text-gray-600">Group {selectedScorecard.name}</span>
+                  <span className="text-gray-400">→</span>
+                  <span className="text-gray-600">
+                    Course: {rounds?.find((r: any) => r.id === selectedRoundId)?.courseName || 'Unknown'}
+                  </span>
+                </div>
+              </div>
+
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[800px] border border-gray-200 rounded-lg">
                   <thead className="bg-gray-50">
@@ -198,7 +268,8 @@ export default function ScoreEntry() {
                       </th>
                       {holes.slice(0, 9).map((hole: any) => (
                         <th key={hole.id} className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                          {hole.holeNumber}
+                          <div>H{hole.holeNumber}</div>
+                          <div className="text-xs text-gray-400">Par {hole.par}</div>
                         </th>
                       ))}
                       <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">
@@ -206,7 +277,8 @@ export default function ScoreEntry() {
                       </th>
                       {holes.slice(9, 18).map((hole: any) => (
                         <th key={hole.id} className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                          {hole.holeNumber}
+                          <div>H{hole.holeNumber}</div>
+                          <div className="text-xs text-gray-400">Par {hole.par}</div>
                         </th>
                       ))}
                       <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">
