@@ -61,13 +61,16 @@ export default function Login() {
   const onRegister = async (data: InsertUser) => {
     setIsLoading(true);
     try {
+      console.log("Attempting to register with data:", data);
       const user = await authApi.register(data);
+      console.log("Registration successful:", user);
       login(user);
       toast({
         title: "Welcome!",
         description: "Your account has been created successfully.",
       });
     } catch (error: any) {
+      console.error("Registration error:", error);
       toast({
         title: "Registration Failed",
         description: error.message || "Something went wrong",

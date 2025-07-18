@@ -8,8 +8,17 @@ export const authApi = {
   },
 
   register: async (userData: InsertUser): Promise<User> => {
-    const response = await apiRequest("POST", "/api/auth/register", userData);
-    return response.json();
+    try {
+      console.log("Making API request to register with data:", userData);
+      const response = await apiRequest("POST", "/api/auth/register", userData);
+      console.log("API response status:", response.status);
+      const result = await response.json();
+      console.log("API response data:", result);
+      return result;
+    } catch (error) {
+      console.error("API request failed:", error);
+      throw error;
+    }
   },
 
   getCurrentUser: (): User | null => {
