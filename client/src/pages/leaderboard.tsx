@@ -12,18 +12,32 @@ export default function Leaderboard() {
   const [leaderboardType, setLeaderboardType] = useState<"overall" | "daily">("overall");
   const [selectedRoundId, setSelectedRoundId] = useState<number | null>(null);
 
-  const { data: tournament } = useQuery({
+  const { data: tournament, isLoading: tournamentLoading, error: tournamentError } = useQuery({
     queryKey: ["/api/tournament/active"],
   });
 
-  const { data: rounds } = useQuery({
+  const { data: rounds, isLoading: roundsLoading, error: roundsError } = useQuery({
     queryKey: ["/api/tournaments", tournament?.id, "rounds"],
     enabled: !!tournament?.id,
   });
 
-  const { data: overallLeaderboard, isLoading: overallLoading } = useQuery({
+  const { data: overallLeaderboard, isLoading: overallLoading, error: overallError } = useQuery({
     queryKey: ["/api/tournaments", tournament?.id, "leaderboard"],
     enabled: !!tournament?.id && leaderboardType === "overall",
+  });
+
+  // Debug logging
+  console.log("Leaderboard component state:", {
+    tournament,
+    tournamentLoading,
+    tournamentError,
+    rounds,
+    roundsLoading,
+    roundsError,
+    overallLeaderboard,
+    overallLoading,
+    overallError,
+    leaderboardType
   });
 
   // Auto-select the current round or latest round
