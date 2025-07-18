@@ -167,6 +167,8 @@ export default function Admin() {
   };
 
   const onCreateTournament = (data: InsertTournament) => {
+    console.log("Creating tournament with data:", data);
+    console.log("Form errors:", tournamentForm.formState.errors);
     createTournamentMutation.mutate(data);
   };
 

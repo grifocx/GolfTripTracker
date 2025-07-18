@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, loginSchema, insertCourseSchema, insertRoundSchema, insertScorecardSchema } from "@shared/schema";
+import { insertUserSchema, loginSchema, insertCourseSchema, insertRoundSchema, insertScorecardSchema, insertTournamentSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import bcrypt from "bcryptjs";
 import { achievementService } from "./achievements";
@@ -81,6 +81,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(tournament);
     } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/tournaments", async (req: Request, res: Response) => {
+    try {
+      console.log("Tournament POST request received:", req.body);
+      const tournamentData = insertTournamentSchema.parse(req.body);
+      console.log("Tournament data parsed:", tournamentData);
+      
+      // Convert numbers to strings for decimal fields in storage
+      const storageData = {
+        ...tournamentData,
+        dailyBuyIn: tournamentData.dailyBuyIn.toString(),
+        overallBuyIn: tournamentData.overallBuyIn.toString(),
+      };
+      console.log("Storage data:", storageData);
+      
+      const tournament = await storage.createTournament(storageData);
+      console.log("Tournament created successfully:", tournament);
+      res.json(tournament);
+    } catch (error: any) {
+      console.error("Tournament creation error:", error);
+      if (error.name === "ZodError") {
+        return res.status(400).json({ message: fromZodError(error).message });
+      }
       res.status(500).json({ message: "Internal server error" });
     }
   });

@@ -237,11 +237,14 @@ export const insertUserSchema = createInsertSchema(users).omit({
   isAdmin: true,
 });
 
-export const insertTournamentSchema = createInsertSchema(tournaments).omit({
-  id: true,
-  createdAt: true,
-}).extend({
+export const insertTournamentSchema = z.object({
+  name: z.string().min(1, "Tournament name is required"),
   courseId: z.number().min(1, "Course is required"),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Start date must be in YYYY-MM-DD format"),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "End date must be in YYYY-MM-DD format"),
+  dailyBuyIn: z.number().min(0, "Daily buy-in must be positive"),
+  overallBuyIn: z.number().min(0, "Overall buy-in must be positive"),
+  isActive: z.boolean().optional().default(true),
 });
 
 export const insertCourseSchema = createInsertSchema(courses).omit({
