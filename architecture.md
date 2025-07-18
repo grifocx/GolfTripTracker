@@ -1,8 +1,8 @@
-# Stick-IT - Golf Tournament Management System - Architecture
+# BroGolfTracker - Golf Tournament Management System - Architecture
 
 ## Overview
 
-Stick-IT is a comprehensive full-stack web application designed for managing annual golf trips. It supports multiple users with handicap tracking, course management, score entry, and real-time leaderboards with net score calculations.
+BroGolfTracker is a comprehensive full-stack web application designed for managing annual golf trips. It supports multiple users with handicap tracking, course management, score entry, and real-time leaderboards with net score calculations.
 
 ## System Architecture
 

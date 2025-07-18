@@ -97,7 +97,7 @@ export function Header() {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-4">
             <Target className="text-golf-green h-8 w-8" />
-            <h1 className="text-xl font-bold golf-dark">Stick-IT</h1>
+            <h1 className="text-xl font-bold golf-dark">BroGolfTracker</h1>
           </div>
           <div className="flex items-center space-x-4">
             {user?.isAdmin && (
