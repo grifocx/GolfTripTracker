@@ -197,6 +197,24 @@ The application follows a modern full-stack architecture with clear separation o
 - Removed complex tie-breaker system in favor of standard golf tie-handling
 - Added helpful tooltips and explanations throughout the interface
 
+### July 18, 2025 - Tournament Management Workflow Overhaul
+- Fixed fundamental tournament management flow issues
+- Replaced "active tournament" dependency with multi-tournament selector dropdown
+- Added clear tournament context to round creation dialogs
+- Enhanced round creation with tournament name display and confirmation
+- Fixed tournament selection workflow: Create Tournament → Select Tournament → Add Rounds → Add Players → Enter Scores
+- Added helpful user guidance when no tournament is selected
+- Improved tournament management UI with proper tournament identification throughout
+- Updated all database queries and mutations to work with selected tournament paradigm
+- Enhanced round management section headers to show which tournament's rounds are displayed
+
+### Database Purge & Fresh Testing Setup
+- Implemented database purge functionality for fresh testing
+- Preserved users and courses while clearing all tournament-related data
+- Removed 2 tournaments, 3 rounds, 6 scorecards, 15 scorecard players, 9 scores, 5 tournament players, and 15 achievements
+- Maintained data integrity with 6 users and 3 complete courses (54 holes total)
+- Clean database ready for comprehensive tournament testing
+
 ### Deployment Ready
 - Production build process configured with frontend/backend compilation
 - Database schema complete with test data

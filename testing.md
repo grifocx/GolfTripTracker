@@ -67,11 +67,11 @@ This guide provides a comprehensive end-to-end testing script for administrators
 - Course management functions work properly
 
 ### Phase 3: Tournament Setup
-**Test Duration: 20 minutes**
+**Test Duration: 25 minutes**
 
 1. **Create Tournament**
-   - Navigate to "Tournament Setup"
-   - Click "Create Tournament"
+   - Navigate to "Tournament Management"
+   - Click "Create Tournament" 
    - Fill in tournament details:
      - Tournament name (e.g., "Spring Golf Weekend 2025")
      - Select golf course from dropdown
@@ -80,47 +80,65 @@ This guide provides a comprehensive end-to-end testing script for administrators
      - Set overall buy-in amount
    - Submit and verify tournament is created
 
-2. **Tournament Configuration**
-   - Go to "Tournament Management"
-   - Find your newly created tournament
-   - Verify tournament details are correct
-   - Check that tournament status is "Active"
+2. **Tournament Selection and Configuration**
+   - In "Tournament Management", use the dropdown to select your newly created tournament
+   - Verify tournament details display correctly in the overview section
+   - Check that tournament status shows "Draft" initially
+   - Review tournament information card shows correct dates, course, and buy-in amounts
 
-3. **Add Players to Tournament**
-   - In tournament management, click "Add Players"
-   - Select all players who will participate
-   - Submit and verify players are added
+3. **Tournament Status Management**
+   - Test status transitions:
+     - Tournament should start as "Draft"
+     - Click "Start" to move to "In Progress"
+     - Verify status updates and visual indicators change
+   - Note: Tournament status controls workflow access
+
+4. **Add Players to Tournament**
+   - With tournament selected, navigate to player management
+   - Add all players who will participate
+   - Submit and verify players are added to the selected tournament
    - Check that player count matches expected participants
 
 **Expected Results:**
-- Tournament created with correct details
-- All participating players registered
-- Tournament appears in active tournaments list
+- Tournament created and selectable from dropdown
+- Tournament context clearly displayed throughout interface
+- Status management works correctly with visual feedback
+- All participating players registered for the specific tournament
 
 ### Phase 4: Round Setup
-**Test Duration: 15 minutes**
+**Test Duration: 20 minutes**
 
 1. **Create Tournament Rounds**
-   - In "Tournament Management", find your tournament
+   - Ensure your tournament is selected in the dropdown
+   - Verify the "Rounds for [Tournament Name]" section shows your tournament
    - Click "Add Round" for each day of the tournament
+   - In the round creation dialog, verify:
+     - Dialog title shows "Create New Round for [Tournament Name]"
+     - Tournament field is pre-filled and disabled (shows context)
+     - Tournament dates are displayed for reference
    - For each round:
      - Set round number (1, 2, 3, etc.)
-     - Set date
+     - Set date within tournament date range
      - Select course (should match tournament course)
-     - Set status as "Pending"
-   - Verify all rounds are created
+   - Submit and verify rounds appear in the tournament-specific list
 
-2. **Scorecard Setup**
+2. **Round Context Verification**
+   - Verify round list shows "Rounds for [Tournament Name]" header
+   - Check that only rounds for the selected tournament are displayed
+   - Test switching tournament selection to see how round display changes
+   - Confirm round creation is contextual to selected tournament
+
+3. **Scorecard Setup**
    - For each round, create scorecards
-   - Click "Create Scorecard"
-   - Name scorecards (e.g., "Group A", "Group B")
-   - Assign players to each scorecard (typically 4 players per group)
-   - Verify scorecard assignments
+   - Navigate to score entry to set up groups
+   - Create scorecards with proper player assignments
+   - Verify scorecard context matches tournament and round selection
 
 **Expected Results:**
-- All tournament rounds created for each day
-- Scorecards properly configured with player assignments
-- Round schedules match tournament dates
+- Tournament context is clear throughout round creation process
+- Round creation dialog shows which tournament the round belongs to
+- Only relevant rounds display for the selected tournament
+- Round management interface provides clear tournament identification
 
 ### Phase 5: Score Entry Testing
 **Test Duration: 20 minutes**
@@ -227,13 +245,16 @@ This guide provides a comprehensive end-to-end testing script for administrators
 ## Pre-Weekend Final Checklist
 
 **24 Hours Before Tournament:**
+- [ ] Tournament selected and status set to "In Progress"
 - [ ] All players registered and handicaps confirmed
-- [ ] Tournament dates and course verified
-- [ ] All rounds and scorecards created
+- [ ] Tournament dates and course verified in tournament overview
+- [ ] All rounds created with proper tournament context
+- [ ] Scorecards properly configured with player assignments
 - [ ] Score entry system tested and working
 - [ ] Leaderboards displaying correctly
 - [ ] Mobile access confirmed for on-course use
 - [ ] Admin credentials secured and accessible
+- [ ] Tournament selection workflow tested and documented
 - [ ] Player instructions communicated (if needed)
 
 **Day of Tournament:**
@@ -260,9 +281,17 @@ This guide provides a comprehensive end-to-end testing script for administrators
 - Verify round status is set to "in_progress" for active scoring
 - Check that hole data is complete for net score calculations
 
+**Tournament Management Issues:**
+- Confirm tournament is properly selected in dropdown
+- Verify tournament context appears throughout interface
+- Check that round creation shows correct tournament name
+- Ensure status management workflow is understood
+- Verify round list shows only rounds for selected tournament
+- Test tournament switching to confirm context updates properly
+
 **Leaderboard Display Issues:**
 - Verify scores are saved and committed
-- Check that tournament is set as active
+- Check that tournament is properly selected
 - Ensure net score calculations are working
 
 ## Success Criteria
@@ -270,12 +299,15 @@ This guide provides a comprehensive end-to-end testing script for administrators
 The tournament setup is ready when:
 - All players can be found in the system with correct handicaps
 - All golf courses have complete 18-hole configurations
-- Tournament is created with proper dates and buy-in amounts
-- All rounds are scheduled with scorecard assignments
+- Tournament is created with proper dates and buy-in amounts and selectable from dropdown
+- Tournament context is clearly displayed throughout the interface
+- All rounds are scheduled with proper tournament association and clear context
+- Round creation dialog shows correct tournament information
 - Score entry system works smoothly with automatic net score calculations
 - Leaderboards display correctly with proper standings
 - Mobile interface is fully functional for on-course use
 - Achievement system is active and tracking properly
+- Tournament selection workflow is intuitive and clearly documented
 
 ## Support Information
 

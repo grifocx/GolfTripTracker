@@ -36,6 +36,7 @@ BroGolfTracker is a comprehensive full-stack web application designed for managi
 1. **Client Request** → React Query → API Routes → Storage Layer → Database
 2. **Database** → Storage Layer → API Routes → React Query → UI Components
 3. **Authentication** → Session Management → Role-based Access Control
+4. **Tournament Selection** → Context Propagation → Round Management → Score Entry
 
 #### Component Structure
 ```
@@ -170,10 +171,12 @@ server/
 ## Key Features
 
 ### Tournament Management
-- Multiple tournament support
-- Date-based tournament scheduling
+- Multiple tournament support with dropdown selector
+- Date-based tournament scheduling with status tracking (draft/in-progress/completed)
 - Buy-in tracking (daily and overall)
 - Round configuration with course assignment
+- Clear tournament context throughout the interface
+- Tournament-specific round management with visual confirmation
 
 ### Score Management
 - Admin-only score entry
@@ -207,11 +210,26 @@ server/
 - SQL injection prevention
 - XSS protection through proper escaping
 
+## Recent Architectural Improvements
+
+### Tournament Management Overhaul (July 18, 2025)
+- Replaced single "active tournament" pattern with multi-tournament selector approach
+- Enhanced user experience with clear tournament context throughout workflows
+- Improved database queries to work with selected tournament paradigm
+- Added visual confirmation for tournament-specific operations
+- Implemented comprehensive status management (draft/in-progress/completed)
+
+### Data Purge & Testing Capabilities
+- Built-in database purge functionality for fresh testing environments
+- Preserved critical data (users, courses) while clearing tournament-specific data
+- Comprehensive testing workflow support for tournament setup validation
+
 ## Future Extensibility
 
 The architecture supports easy extension for:
-- Additional user roles
-- Tournament formats (match play, stroke play)
-- Advanced statistics and analytics
-- Mobile application development
-- Third-party integrations
+- Additional user roles and permission levels
+- Tournament formats (match play, stroke play, team competitions)
+- Advanced statistics and analytics with historical data
+- Mobile application development with API-first design
+- Third-party integrations (golf course APIs, handicap services)
+- Multi-organization support with tenant isolation
