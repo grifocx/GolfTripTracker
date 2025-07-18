@@ -23,17 +23,21 @@ export default function TournamentManagement() {
   const [editRoundDialogOpen, setEditRoundDialogOpen] = useState(false);
   const [selectedRound, setSelectedRound] = useState<any>(null);
 
-  const { data: tournament } = useQuery({
-    queryKey: ["/api/tournament/active"],
+  const { data: tournaments } = useQuery({
+    queryKey: ["/api/tournaments"],
   });
 
   const { data: courses } = useQuery({
     queryKey: ["/api/courses"],
   });
 
+  // Select the first tournament or allow user to select
+  const [selectedTournamentId, setSelectedTournamentId] = useState<number | null>(null);
+  const selectedTournament = tournaments?.find(t => t.id === selectedTournamentId) || tournaments?.[0];
+
   const { data: rounds } = useQuery({
-    queryKey: ["/api/tournaments", tournament?.id, "rounds"],
-    enabled: !!tournament?.id,
+    queryKey: ["/api/tournaments", selectedTournament?.id, "rounds"],
+    enabled: !!selectedTournament?.id,
   });
 
   const tournamentForm = useForm<InsertTournament>({
@@ -53,7 +57,7 @@ export default function TournamentManagement() {
   const roundForm = useForm<InsertRound>({
     resolver: zodResolver(insertRoundSchema),
     defaultValues: {
-      tournamentId: tournament?.id || 0,
+      tournamentId: selectedTournament?.id || 0,
       courseId: 0,
       roundNumber: 1,
       date: new Date().toISOString().split('T')[0],
@@ -64,7 +68,7 @@ export default function TournamentManagement() {
   const editRoundForm = useForm<InsertRound>({
     resolver: zodResolver(insertRoundSchema),
     defaultValues: {
-      tournamentId: tournament?.id || 0,
+      tournamentId: selectedTournament?.id || 0,
       courseId: 0,
       roundNumber: 1,
       date: new Date().toISOString().split('T')[0],
@@ -83,7 +87,7 @@ export default function TournamentManagement() {
         title: "Tournament Created",
         description: "Your tournament has been created successfully!",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/tournament/active"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
       setNewTournamentDialogOpen(false);
       tournamentForm.reset();
     },
@@ -105,7 +109,7 @@ export default function TournamentManagement() {
         title: "Round Created",
         description: "The tournament round has been created successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/tournaments", tournament?.id, "rounds"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tournaments", selectedTournament?.id, "rounds"] });
       setNewRoundDialogOpen(false);
       roundForm.reset();
     },
@@ -127,7 +131,7 @@ export default function TournamentManagement() {
         title: "Round Updated",
         description: "The tournament round has been updated successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/tournaments", tournament?.id, "rounds"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tournaments", selectedTournament?.id, "rounds"] });
       setEditRoundDialogOpen(false);
       editRoundForm.reset();
     },
@@ -184,7 +188,7 @@ export default function TournamentManagement() {
   const onCreateRound = (data: InsertRound) => {
     createRoundMutation.mutate({
       ...data,
-      tournamentId: tournament?.id || 0,
+      tournamentId: selectedTournament?.id || 0,
     });
   };
 
@@ -205,7 +209,7 @@ export default function TournamentManagement() {
       updateRoundMutation.mutate({
         ...data,
         id: selectedRound.id,
-        tournamentId: tournament?.id || 0,
+        tournamentId: selectedTournament?.id || 0,
       });
     }
   };
@@ -249,8 +253,8 @@ export default function TournamentManagement() {
     }
   };
 
-  // If no tournament exists, show tournament creation interface
-  if (!tournament) {
+  // If no tournaments exist, show tournament creation interface
+  if (!tournaments || tournaments.length === 0) {
     return (
       <div className="space-y-6">
         <Card>
@@ -367,7 +371,7 @@ export default function TournamentManagement() {
 
   return (
     <div className="space-y-6">
-      {/* Tournament Overview */}
+      {/* Tournament Selector */}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
@@ -472,17 +476,38 @@ export default function TournamentManagement() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Tournament Info */}
+          {/* Tournament Selector */}
+          <div className="mb-6">
+            <Label htmlFor="tournamentSelect">Select Tournament</Label>
+            <Select
+              value={selectedTournament?.id?.toString() || ""}
+              onValueChange={(value) => setSelectedTournamentId(parseInt(value))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a tournament to manage" />
+              </SelectTrigger>
+              <SelectContent>
+                {tournaments?.map((tournament: any) => (
+                  <SelectItem key={tournament.id} value={tournament.id.toString()}>
+                    {tournament.name} - {tournament.status}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {selectedTournament && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Tournament Info */}
             <div className="space-y-4">
               <div className="bg-golf-green/10 p-4 rounded-lg">
                 <h3 className="font-semibold text-golf-green flex items-center gap-2">
                   <Trophy className="h-5 w-5" />
                   Tournament
                 </h3>
-                <p className="text-2xl font-bold text-golf-dark">{tournament.name}</p>
+                <p className="text-2xl font-bold text-golf-dark">{selectedTournament.name}</p>
                 <p className="text-sm text-gray-600">
-                  {tournament.startDate} - {tournament.endDate}
+                  {selectedTournament.startDate} - {selectedTournament.endDate}
                 </p>
               </div>
               
@@ -491,17 +516,17 @@ export default function TournamentManagement() {
                 <h4 className="font-semibold text-gray-800 mb-3">Tournament Status</h4>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Badge className={`${getStatusColor(tournament.status || "draft")} flex items-center gap-1`}>
-                      {getStatusIcon(tournament.status || "draft")}
-                      {getStatusLabel(tournament.status || "draft")}
+                    <Badge className={`${getStatusColor(selectedTournament.status || "draft")} flex items-center gap-1`}>
+                      {getStatusIcon(selectedTournament.status || "draft")}
+                      {getStatusLabel(selectedTournament.status || "draft")}
                     </Badge>
                   </div>
                   <div className="flex gap-2">
-                    {tournament.status === "draft" && (
+                    {selectedTournament.status === "draft" && (
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => updateTournamentStatusMutation.mutate({ id: tournament.id, status: "in_progress" })}
+                        onClick={() => updateTournamentStatusMutation.mutate({ id: selectedTournament.id, status: "in_progress" })}
                         disabled={updateTournamentStatusMutation.isPending}
                         className="bg-green-50 hover:bg-green-100 text-green-800 border-green-200"
                       >
@@ -509,11 +534,11 @@ export default function TournamentManagement() {
                         Start
                       </Button>
                     )}
-                    {tournament.status === "in_progress" && (
+                    {selectedTournament.status === "in_progress" && (
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => updateTournamentStatusMutation.mutate({ id: tournament.id, status: "completed" })}
+                        onClick={() => updateTournamentStatusMutation.mutate({ id: selectedTournament.id, status: "completed" })}
                         disabled={updateTournamentStatusMutation.isPending}
                         className="bg-blue-50 hover:bg-blue-100 text-blue-800 border-blue-200"
                       >
@@ -521,11 +546,11 @@ export default function TournamentManagement() {
                         Complete
                       </Button>
                     )}
-                    {tournament.status === "completed" && (
+                    {selectedTournament.status === "completed" && (
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => updateTournamentStatusMutation.mutate({ id: tournament.id, status: "in_progress" })}
+                        onClick={() => updateTournamentStatusMutation.mutate({ id: selectedTournament.id, status: "in_progress" })}
                         disabled={updateTournamentStatusMutation.isPending}
                         className="bg-green-50 hover:bg-green-100 text-green-800 border-green-200"
                       >
@@ -536,9 +561,9 @@ export default function TournamentManagement() {
                   </div>
                 </div>
                 <div className="mt-2 text-sm text-gray-600">
-                  {tournament.status === "draft" && "Tournament is being set up. Start when ready to begin scoring."}
-                  {tournament.status === "in_progress" && "Tournament is active. Players can submit scores."}
-                  {tournament.status === "completed" && "Tournament has ended. Results are final."}
+                  {selectedTournament.status === "draft" && "Tournament is being set up. Start when ready to begin scoring."}
+                  {selectedTournament.status === "in_progress" && "Tournament is active. Players can submit scores."}
+                  {selectedTournament.status === "completed" && "Tournament has ended. Results are final."}
                 </div>
               </div>
             </div>
@@ -551,7 +576,7 @@ export default function TournamentManagement() {
                   <MapPin className="h-5 w-5 text-golf-green" />
                   <div>
                     <p className="font-medium">Course Information</p>
-                    <p className="text-sm text-gray-600">Course ID: {tournament.courseId}</p>
+                    <p className="text-sm text-gray-600">Course ID: {selectedTournament.courseId}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -559,7 +584,7 @@ export default function TournamentManagement() {
                   <div>
                     <p className="font-medium">Buy-ins</p>
                     <p className="text-sm text-gray-600">
-                      Daily: ${tournament.dailyBuyIn} | Overall: ${tournament.overallBuyIn}
+                      Daily: ${selectedTournament.dailyBuyIn} | Overall: ${selectedTournament.overallBuyIn}
                     </p>
                   </div>
                 </div>
@@ -574,17 +599,19 @@ export default function TournamentManagement() {
                 </div>
                 <div className="bg-golf-gold/10 p-3 rounded-lg">
                   <div className="text-lg font-bold golf-gold">
-                    {getStatusLabel(tournament.status || "draft")}
+                    {getStatusLabel(selectedTournament.status || "draft")}
                   </div>
                   <div className="text-sm text-gray-600">Status</div>
                 </div>
               </div>
             </div>
           </div>
+          )}
         </CardContent>
       </Card>
 
       {/* Tournament Rounds */}
+      {selectedTournament && (
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
@@ -679,6 +706,8 @@ export default function TournamentManagement() {
           )}
         </CardContent>
       </Card>
+
+      )}
 
       {/* Edit Round Dialog */}
       <Dialog open={editRoundDialogOpen} onOpenChange={setEditRoundDialogOpen}>
