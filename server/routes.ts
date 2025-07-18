@@ -5,6 +5,12 @@ import { insertUserSchema, loginSchema, insertCourseSchema, insertRoundSchema, i
 import { fromZodError } from "zod-validation-error";
 import bcrypt from "bcryptjs";
 import { achievementService } from "./achievements";
+import { 
+  calculateCourseHandicap, 
+  getStrokesForHole, 
+  validateHoleScore, 
+  getScoreValidationMessage 
+} from "./golfUtils";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
@@ -240,9 +246,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/scores", async (req: Request, res: Response) => {
     try {
       const { scores } = req.body;
+      
+      // Validate each score against golf rules
+      const validationErrors: string[] = [];
+      
+      for (const score of scores) {
+        // Get user, hole, and course data for validation
+        const user = await storage.getUser(score.userId);
+        const hole = await storage.getHole(score.holeId);
+        const course = await storage.getCourse(hole.courseId);
+        
+        if (!user || !hole || !course) {
+          validationErrors.push(`Missing data for score validation`);
+          continue;
+        }
+        
+        // Calculate course handicap and strokes received
+        const courseHandicap = calculateCourseHandicap(
+          parseFloat(user.handicapIndex.toString()),
+          course.slopeRating,
+          parseFloat(course.courseRating.toString()),
+          course.par
+        );
+        
+        const strokesReceived = getStrokesForHole(courseHandicap, hole.handicapRanking);
+        
+        // Validate the score
+        const { isValid } = validateHoleScore(score.strokes, hole, strokesReceived);
+        
+        if (!isValid) {
+          const errorMessage = getScoreValidationMessage(score.strokes, hole, strokesReceived);
+          validationErrors.push(`Hole ${hole.holeNumber} for ${user.firstName} ${user.lastName}: ${errorMessage}`);
+        }
+      }
+      
+      if (validationErrors.length > 0) {
+        return res.status(400).json({ 
+          message: "Score validation failed", 
+          errors: validationErrors 
+        });
+      }
+      
+      // Save scores if all validations pass
       const savedScores = await storage.saveScores(scores);
       res.json(savedScores);
     } catch (error) {
+      console.error("Score saving error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });

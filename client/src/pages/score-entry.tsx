@@ -177,7 +177,7 @@ export default function ScoreEntry() {
                   <div className="space-y-1 text-sm text-gray-600">
                     {scorecard.players?.map((player: any) => (
                       <div key={player.id}>
-                        {player.firstName} {player.lastName} ({player.handicap})
+                        {player.firstName} {player.lastName} (HCP: {player.handicapIndex})
                       </div>
                     ))}
                   </div>
@@ -236,37 +236,45 @@ export default function ScoreEntry() {
                               </div>
                               <div>
                                 <div className="text-sm font-medium">{player.firstName} {player.lastName}</div>
-                                <div className="text-xs text-gray-500">HCP: {player.handicap}</div>
+                                <div className="text-xs text-gray-500">HCP: {player.handicapIndex}</div>
                               </div>
                             </div>
                           </td>
                           {/* Front nine */}
-                          {frontNine.map((hole: any) => (
-                            <td key={hole.id} className="px-2 py-3">
-                              <Input
-                                type="number"
-                                min="1"
-                                max="12"
-                                className="w-12 h-8 text-center"
-                                value={getScore(player.id, hole.id)}
-                                onChange={(e) => handleScoreChange(player.id, hole.id, parseInt(e.target.value) || 0)}
-                              />
-                            </td>
-                          ))}
+                          {frontNine.map((hole: any) => {
+                            const maxScore = (hole.par * 2) + Math.floor(player.handicapIndex / 18) + (player.handicapIndex % 18 >= hole.handicapRanking ? 1 : 0);
+                            return (
+                              <td key={hole.id} className="px-2 py-3">
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  max={maxScore}
+                                  className="w-12 h-8 text-center"
+                                  value={getScore(player.id, hole.id)}
+                                  onChange={(e) => handleScoreChange(player.id, hole.id, parseInt(e.target.value) || 0)}
+                                  title={`Max score: ${maxScore} (Par ${hole.par} + ${maxScore - hole.par} strokes)`}
+                                />
+                              </td>
+                            );
+                          })}
                           <td className="px-3 py-3 text-center font-semibold">{frontTotal || 0}</td>
                           {/* Back nine */}
-                          {backNine.map((hole: any) => (
-                            <td key={hole.id} className="px-2 py-3">
-                              <Input
-                                type="number"
-                                min="1"
-                                max="12"
-                                className="w-12 h-8 text-center"
-                                value={getScore(player.id, hole.id)}
-                                onChange={(e) => handleScoreChange(player.id, hole.id, parseInt(e.target.value) || 0)}
-                              />
-                            </td>
-                          ))}
+                          {backNine.map((hole: any) => {
+                            const maxScore = (hole.par * 2) + Math.floor(player.handicapIndex / 18) + (player.handicapIndex % 18 >= hole.handicapRanking ? 1 : 0);
+                            return (
+                              <td key={hole.id} className="px-2 py-3">
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  max={maxScore}
+                                  className="w-12 h-8 text-center"
+                                  value={getScore(player.id, hole.id)}
+                                  onChange={(e) => handleScoreChange(player.id, hole.id, parseInt(e.target.value) || 0)}
+                                  title={`Max score: ${maxScore} (Par ${hole.par} + ${maxScore - hole.par} strokes)`}
+                                />
+                              </td>
+                            );
+                          })}
                           <td className="px-3 py-3 text-center font-semibold">{backTotal || 0}</td>
                           <td className="px-3 py-3 text-center font-bold text-lg">{totalScore || 0}</td>
                         </tr>
@@ -274,6 +282,20 @@ export default function ScoreEntry() {
                     })}
                   </tbody>
                 </table>
+              </div>
+
+              <div className="bg-blue-50 p-4 rounded-lg mb-4">
+                <div className="flex items-start space-x-2">
+                  <Info className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-medium text-blue-900 mb-1">Golf Rules Applied:</p>
+                    <ul className="text-blue-800 space-y-1">
+                      <li>• Maximum score per hole is double par + handicap strokes</li>
+                      <li>• Handicap strokes are assigned based on hole difficulty (1-18)</li>
+                      <li>• Net scores automatically calculated using proper golf handicap system</li>
+                    </ul>
+                  </div>
+                </div>
               </div>
 
               <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">

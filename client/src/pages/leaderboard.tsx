@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Calendar, DollarSign } from "lucide-react";
+import { Trophy, Calendar, DollarSign, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Leaderboard() {
@@ -216,9 +216,18 @@ export default function Leaderboard() {
                         </td>
                       )}
                       <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <span className={cn("text-lg font-bold", getScoreColor(player.netScore))}>
-                          {formatScore(player.netScore)}
-                        </span>
+                        <div className="flex items-center justify-center space-x-2">
+                          <span className={cn("text-lg font-bold", getScoreColor(player.netScore))}>
+                            {formatScore(player.netScore)}
+                          </span>
+                          {player.tieBreaker && (
+                            <span className="text-xs" title={`Tie-breaker: ${player.tieBreaker}`}>
+                              {player.tieBreaker === 'rock' ? '🪨' : 
+                               player.tieBreaker === 'paper' ? '📄' : 
+                               player.tieBreaker === 'scissors' ? '✂️' : ''}
+                            </span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

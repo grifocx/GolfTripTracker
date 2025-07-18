@@ -98,6 +98,7 @@ export function formatScoreToPar(scoreToPar: number): string {
 
 /**
  * Validate if a score is within acceptable range for a hole
+ * Maximum score is double par + handicap strokes received
  */
 export function validateHoleScore(
   strokes: number,
@@ -112,8 +113,26 @@ export function validateHoleScore(
 }
 
 /**
- * Calculate leaderboard position with proper tie-breaking
- * Uses countback method: compare back 9, then back 6, then back 3, etc.
+ * Get validation message for invalid score
+ */
+export function getScoreValidationMessage(
+  strokes: number,
+  hole: Hole,
+  strokesReceived: number
+): string {
+  const { isValid, maxScore } = validateHoleScore(strokes, hole, strokesReceived);
+  if (!isValid) {
+    if (strokes < 1) {
+      return "Score must be at least 1 stroke";
+    }
+    return `Maximum score for this hole is ${maxScore} (double par + ${strokesReceived} handicap strokes)`;
+  }
+  return "";
+}
+
+/**
+ * Calculate leaderboard position with fun tie-breaking
+ * First by net score, then by rock/paper/scissors for tied players
  */
 export function calculateLeaderboardPositions(
   players: Array<{
@@ -125,55 +144,52 @@ export function calculateLeaderboardPositions(
   userId: number;
   position: number;
   totalNetScore: number;
+  tieBreaker?: string;
 }> {
-  // Sort by net score, then by countback
+  // Sort by net score first
   const sortedPlayers = players.sort((a, b) => {
     if (a.totalNetScore !== b.totalNetScore) {
       return a.totalNetScore - b.totalNetScore;
     }
     
-    // Tie-breaking: countback method
-    // Compare back 9 (holes 10-18), then back 6, then back 3, etc.
-    const countbackHoles = [
-      [10, 11, 12, 13, 14, 15, 16, 17, 18], // Back 9
-      [13, 14, 15, 16, 17, 18], // Back 6
-      [16, 17, 18], // Back 3
-      [18], // Last hole
-    ];
+    // For tied players, use rock/paper/scissors tie-breaker
+    // Generate consistent "choice" based on user ID for deterministic results
+    const choices = ['rock', 'paper', 'scissors'];
+    const aChoice = choices[a.userId % 3];
+    const bChoice = choices[b.userId % 3];
     
-    for (const holes of countbackHoles) {
-      const aScore = holes.reduce((sum, holeNum) => {
-        const score = a.scores.find(s => s.holeNumber === holeNum);
-        return sum + (score?.netStrokes || 0);
-      }, 0);
-      
-      const bScore = holes.reduce((sum, holeNum) => {
-        const score = b.scores.find(s => s.holeNumber === holeNum);
-        return sum + (score?.netStrokes || 0);
-      }, 0);
-      
-      if (aScore !== bScore) {
-        return aScore - bScore;
-      }
+    // Rock beats scissors, scissors beats paper, paper beats rock
+    if (aChoice === bChoice) return 0; // Still tied
+    if (
+      (aChoice === 'rock' && bChoice === 'scissors') ||
+      (aChoice === 'scissors' && bChoice === 'paper') ||
+      (aChoice === 'paper' && bChoice === 'rock')
+    ) {
+      return -1; // a wins
     }
-    
-    return 0; // True tie
+    return 1; // b wins
   });
 
-  // Assign positions (handle ties properly)
+  // Assign positions and track tie-breakers
   const results = [];
   let currentPosition = 1;
   
   for (let i = 0; i < sortedPlayers.length; i++) {
     const player = sortedPlayers[i];
     
-    // Check if this player tied with the previous player
-    if (i > 0 && sortedPlayers[i - 1].totalNetScore === player.totalNetScore) {
-      // Same position as previous player
+    // Check if this player tied with the previous player on score
+    const hasTie = i > 0 && sortedPlayers[i - 1].totalNetScore === player.totalNetScore;
+    
+    if (hasTie) {
+      // Same position as previous player, but tie-breaker applied
+      const choices = ['rock', 'paper', 'scissors'];
+      const tieBreaker = choices[player.userId % 3];
+      
       results.push({
         userId: player.userId,
         position: results[i - 1].position,
         totalNetScore: player.totalNetScore,
+        tieBreaker: tieBreaker,
       });
     } else {
       // New position
@@ -188,4 +204,16 @@ export function calculateLeaderboardPositions(
   }
   
   return results;
+}
+
+/**
+ * Get rock/paper/scissors emoji for display
+ */
+export function getTieBreakerEmoji(choice: string): string {
+  switch (choice) {
+    case 'rock': return '🪨';
+    case 'paper': return '📄';
+    case 'scissors': return '✂️';
+    default: return '';
+  }
 }

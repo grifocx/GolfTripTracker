@@ -164,6 +164,11 @@ export class DatabaseStorage implements IStorage {
     return newHole;
   }
 
+  async getHole(holeId: number): Promise<Hole | undefined> {
+    const [hole] = await db.select().from(holes).where(eq(holes.id, holeId));
+    return hole;
+  }
+
   async createHoles(holeData: InsertHole[]): Promise<Hole[]> {
     return await db
       .insert(holes)
