@@ -1,8 +1,8 @@
-# Golf Tournament Management System - Architecture
+# Stick-IT - Golf Tournament Management System - Architecture
 
 ## Overview
 
-The Golf Tournament Management System is a comprehensive full-stack web application designed for managing annual golf trips. It supports multiple users with handicap tracking, course management, score entry, and real-time leaderboards with net score calculations.
+Stick-IT is a comprehensive full-stack web application designed for managing annual golf trips. It supports multiple users with handicap tracking, course management, score entry, and real-time leaderboards with net score calculations.
 
 ## System Architecture
 

@@ -88,7 +88,7 @@ export default function Login() {
           <div className="flex justify-center mb-4">
             <Target className="h-12 w-12 text-golf-green" />
           </div>
-          <CardTitle className="text-2xl font-bold golf-dark">Golf Tournament</CardTitle>
+          <CardTitle className="text-2xl font-bold golf-dark">Stick-IT</CardTitle>
           <CardDescription>Sign in to your account or create a new one</CardDescription>
         </CardHeader>
         <CardContent>

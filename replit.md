@@ -1,8 +1,8 @@
-# Golf Tournament Management System
+# Stick-IT - Golf Tournament Management System
 
 ## Overview
 
-This is a full-stack golf tournament management system built with React, Express, and PostgreSQL. The application allows users to manage golf tournaments, track scores, maintain leaderboards, and handle player registrations. It features a responsive design with separate mobile and desktop interfaces, role-based access control, and comprehensive tournament management capabilities.
+Stick-IT is a full-stack golf tournament management system built with React, Express, and PostgreSQL. The application allows users to manage golf tournaments, track scores, maintain leaderboards, and handle player registrations. It features a responsive design with separate mobile and desktop interfaces, role-based access control, and comprehensive tournament management capabilities.
 
 **Current Status**: Production-ready with complete authentication, tournament management, scoring system, and cross-browser compatibility.
 
@@ -126,7 +126,8 @@ The application follows a modern full-stack architecture with clear separation o
 
 ## Recent Changes
 
-### July 18, 2025 - Cross-Browser Compatibility & Authentication Fixes
+### July 18, 2025 - Rebranding & Cross-Browser Compatibility Fixes
+- Rebranded application to "Stick-IT" across all interfaces and documentation
 - Fixed critical authentication issue causing blank screens in Safari and Edge browsers
 - Resolved missing icon import (Volleyball → Target) in navigation component
 - Added comprehensive error boundaries for graceful error handling
