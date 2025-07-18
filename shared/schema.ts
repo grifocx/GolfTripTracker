@@ -87,11 +87,38 @@ export const payouts = pgTable("payouts", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const achievements = pgTable("achievements", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  icon: text("icon").notNull(), // lucide icon name
+  category: text("category").notNull(), // scoring, tournament, streak, special
+  condition: text("condition").notNull(), // hole_in_one, eagles, tournament_wins, etc.
+  targetValue: integer("target_value"), // null for one-time achievements
+  tier: text("tier").notNull().default("bronze"), // bronze, silver, gold, platinum
+  points: integer("points").notNull().default(10),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const userAchievements = pgTable("user_achievements", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  achievementId: integer("achievement_id").references(() => achievements.id).notNull(),
+  progress: integer("progress").default(0).notNull(),
+  isCompleted: boolean("is_completed").default(false).notNull(),
+  completedAt: timestamp("completed_at"),
+  tournamentId: integer("tournament_id").references(() => tournaments.id), // optional context
+  roundId: integer("round_id").references(() => rounds.id), // optional context
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   scorecardPlayers: many(scorecardPlayers),
   scores: many(scores),
   payouts: many(payouts),
+  userAchievements: many(userAchievements),
 }));
 
 export const tournamentsRelations = relations(tournaments, ({ many }) => ({
@@ -174,6 +201,29 @@ export const payoutsRelations = relations(payouts, ({ one }) => ({
   }),
 }));
 
+export const achievementsRelations = relations(achievements, ({ many }) => ({
+  userAchievements: many(userAchievements),
+}));
+
+export const userAchievementsRelations = relations(userAchievements, ({ one }) => ({
+  user: one(users, {
+    fields: [userAchievements.userId],
+    references: [users.id],
+  }),
+  achievement: one(achievements, {
+    fields: [userAchievements.achievementId],
+    references: [achievements.id],
+  }),
+  tournament: one(tournaments, {
+    fields: [userAchievements.tournamentId],
+    references: [tournaments.id],
+  }),
+  round: one(rounds, {
+    fields: [userAchievements.roundId],
+    references: [rounds.id],
+  }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -210,6 +260,16 @@ export const insertScoreSchema = createInsertSchema(scores).omit({
   createdAt: true,
 });
 
+export const insertAchievementSchema = createInsertSchema(achievements).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertUserAchievementSchema = createInsertSchema(userAchievements).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
   password: z.string().min(1, "Password is required"),
@@ -232,4 +292,8 @@ export type ScorecardPlayer = typeof scorecardPlayers.$inferSelect;
 export type Score = typeof scores.$inferSelect;
 export type InsertScore = z.infer<typeof insertScoreSchema>;
 export type Payout = typeof payouts.$inferSelect;
+export type Achievement = typeof achievements.$inferSelect;
+export type InsertAchievement = z.infer<typeof insertAchievementSchema>;
+export type UserAchievement = typeof userAchievements.$inferSelect;
+export type InsertUserAchievement = z.infer<typeof insertUserAchievementSchema>;
 export type LoginData = z.infer<typeof loginSchema>;

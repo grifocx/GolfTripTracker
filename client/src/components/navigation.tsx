@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { LogOut, Trophy, Calendar, Target, Users, Settings, MapPin, List } from "lucide-react";
+import { LogOut, Trophy, Calendar, Target, Users, Settings, MapPin, List, Award } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavigationProps {
@@ -13,6 +13,7 @@ export function BottomNavigation({ currentView, onViewChange }: NavigationProps)
 
   const navItems = [
     { id: "leaderboard", label: "Leaders", icon: Trophy },
+    { id: "achievements", label: "Badges", icon: Award },
     { id: "score-entry", label: "Scores", icon: Target, adminOnly: true },
     { id: "players", label: "Players", icon: Users },
     { id: "admin", label: "Admin", icon: Settings, adminOnly: true },
@@ -20,7 +21,7 @@ export function BottomNavigation({ currentView, onViewChange }: NavigationProps)
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 sm:hidden">
-      <div className={`grid h-16 ${navItems.length === 4 ? 'grid-cols-4' : 'grid-cols-3'}`}>
+      <div className={`grid h-16 ${navItems.length === 5 ? 'grid-cols-5' : navItems.length === 4 ? 'grid-cols-4' : 'grid-cols-3'}`}>
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentView === item.id;
@@ -50,6 +51,7 @@ export function DesktopSidebar({ currentView, onViewChange }: NavigationProps) {
   const navItems = [
     { id: "leaderboard", label: "Leaderboard", icon: Trophy },
     { id: "daily", label: "Daily Results", icon: Calendar },
+    { id: "achievements", label: "Achievements", icon: Award },
     { id: "score-entry", label: "Score Entry", icon: Target, adminOnly: true },
     { id: "players", label: "Players", icon: Users },
     { id: "courses", label: "Courses", icon: MapPin, adminOnly: true },

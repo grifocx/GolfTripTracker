@@ -5,6 +5,7 @@ import Leaderboard from "./leaderboard";
 import ScoreEntry from "./score-entry";
 import Players from "./players";
 import Admin from "./admin";
+import Achievements from "./achievements";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -23,6 +24,8 @@ export default function Dashboard() {
         case "leaderboard":
         case "daily":
           return <Leaderboard />;
+        case "achievements":
+          return <Achievements />;
         case "score-entry":
           return <ScoreEntry />;
         case "players":

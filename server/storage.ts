@@ -1,9 +1,11 @@
 import { 
   users, tournaments, courses, holes, rounds, scorecards, scorecardPlayers, scores, payouts,
+  achievements, userAchievements,
   type User, type InsertUser, type Tournament, type InsertTournament,
   type Course, type InsertCourse, type Hole, type InsertHole,
   type Round, type InsertRound, type Scorecard, type InsertScorecard,
-  type ScorecardPlayer, type Score, type InsertScore, type Payout
+  type ScorecardPlayer, type Score, type InsertScore, type Payout,
+  type Achievement, type InsertAchievement, type UserAchievement, type InsertUserAchievement
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, asc, sql } from "drizzle-orm";
@@ -55,6 +57,14 @@ export interface IStorage {
   // Payout methods
   getPayoutsByTournament(tournamentId: number): Promise<(Payout & { user: User })[]>;
   savePayout(payout: Omit<Payout, 'id' | 'createdAt'>): Promise<Payout>;
+
+  // Achievement methods
+  getAllAchievements(): Promise<Achievement[]>;
+  getUserAchievements(userId: number): Promise<(UserAchievement & { achievement: Achievement })[]>;
+  createAchievement(achievement: InsertAchievement): Promise<Achievement>;
+  updateUserAchievement(userId: number, achievementId: number, progress: number): Promise<void>;
+  completeUserAchievement(userId: number, achievementId: number, tournamentId?: number, roundId?: number): Promise<void>;
+  checkAndUpdateAchievements(userId: number, context: { tournament?: Tournament; round?: Round; score?: Score }): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -381,6 +391,67 @@ export class DatabaseStorage implements IStorage {
       .values(payout)
       .returning();
     return newPayout;
+  }
+
+  // Achievement methods
+  async getAllAchievements(): Promise<Achievement[]> {
+    return await db.select().from(achievements).where(eq(achievements.isActive, true));
+  }
+
+  async getUserAchievements(userId: number): Promise<(UserAchievement & { achievement: Achievement })[]> {
+    return await db
+      .select()
+      .from(userAchievements)
+      .innerJoin(achievements, eq(userAchievements.achievementId, achievements.id))
+      .where(eq(userAchievements.userId, userId));
+  }
+
+  async createAchievement(achievement: InsertAchievement): Promise<Achievement> {
+    const [result] = await db
+      .insert(achievements)
+      .values(achievement)
+      .returning();
+    return result;
+  }
+
+  async updateUserAchievement(userId: number, achievementId: number, progress: number): Promise<void> {
+    await db
+      .update(userAchievements)
+      .set({ progress })
+      .where(
+        and(
+          eq(userAchievements.userId, userId),
+          eq(userAchievements.achievementId, achievementId)
+        )
+      );
+  }
+
+  async completeUserAchievement(userId: number, achievementId: number, tournamentId?: number, roundId?: number): Promise<void> {
+    await db
+      .insert(userAchievements)
+      .values({
+        userId,
+        achievementId,
+        progress: 1,
+        isCompleted: true,
+        completedAt: new Date(),
+        tournamentId,
+        roundId
+      })
+      .onConflictDoUpdate({
+        target: [userAchievements.userId, userAchievements.achievementId],
+        set: {
+          isCompleted: true,
+          completedAt: new Date(),
+          progress: 1
+        }
+      });
+  }
+
+  async checkAndUpdateAchievements(userId: number, context: { tournament?: Tournament; round?: Round; score?: Score }): Promise<void> {
+    // This will be implemented in the achievement service
+    // For now, just a placeholder that will be expanded
+    console.log(`Checking achievements for user ${userId}`);
   }
 }
 

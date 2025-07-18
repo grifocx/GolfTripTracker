@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { insertUserSchema, loginSchema, insertCourseSchema, insertRoundSchema, insertScorecardSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import bcrypt from "bcryptjs";
+import { achievementService } from "./achievements";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
@@ -251,6 +252,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Internal server error" });
     }
   });
+
+  // Achievement routes
+  app.get("/api/achievements", async (req: Request, res: Response) => {
+    try {
+      const achievements = await storage.getAllAchievements();
+      res.json(achievements);
+    } catch (error) {
+      console.error("Error fetching achievements:", error);
+      res.status(500).json({ message: "Failed to fetch achievements" });
+    }
+  });
+
+  app.get("/api/achievements/user/:userId", async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const userAchievements = await storage.getUserAchievements(userId);
+      const stats = await achievementService.getUserAchievementStats(userId);
+      res.json({ userAchievements, stats });
+    } catch (error) {
+      console.error("Error fetching user achievements:", error);
+      res.status(500).json({ message: "Failed to fetch user achievements" });
+    }
+  });
+
+  // Initialize achievements on server start
+  achievementService.initializeAchievements();
 
   const httpServer = createServer(app);
   return httpServer;
