@@ -1,6 +1,6 @@
 import { 
   users, tournaments, courses, holes, rounds, scorecards, scorecardPlayers, scores, payouts,
-  type User, type UpsertUser, type InsertUser, type Tournament, type InsertTournament,
+  type User, type InsertUser, type Tournament, type InsertTournament,
   type Course, type InsertCourse, type Hole, type InsertHole,
   type Round, type InsertRound, type Scorecard, type InsertScorecard,
   type ScorecardPlayer, type Score, type InsertScore, type Payout
@@ -9,11 +9,8 @@ import { db } from "./db";
 import { eq, and, desc, asc, sql } from "drizzle-orm";
 
 export interface IStorage {
-  // User methods (for Replit Auth)
-  getUser(id: string): Promise<User | undefined>;
-  upsertUser(user: UpsertUser): Promise<User>;
-  
-  // Legacy user methods (for backward compatibility)
+  // User methods
+  getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
@@ -61,28 +58,11 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  // Replit Auth methods
-  async getUser(id: string): Promise<User | undefined> {
+  async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;
   }
 
-  async upsertUser(userData: UpsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          ...userData,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
-    return user;
-  }
-
-  // Legacy methods for backward compatibility
   async getUserByUsername(username: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.username, username));
     return user || undefined;
