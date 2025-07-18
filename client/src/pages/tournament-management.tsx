@@ -252,10 +252,106 @@ export default function TournamentManagement() {
       {/* Tournament Overview */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl font-bold golf-dark flex items-center gap-2">
-            <Trophy className="h-6 w-6" />
-            Tournament Management
-          </CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-2xl font-bold golf-dark flex items-center gap-2">
+              <Trophy className="h-6 w-6" />
+              Tournament Management
+            </CardTitle>
+            <Dialog open={newTournamentDialogOpen} onOpenChange={setNewTournamentDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-golf-green hover:bg-golf-green/90">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create New Tournament
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create New Tournament</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={tournamentForm.handleSubmit(onCreateTournament)} className="space-y-4">
+                  <div>
+                    <Label htmlFor="name">Tournament Name</Label>
+                    <Input
+                      id="name"
+                      placeholder="e.g., Annual Golf Trip 2025"
+                      {...tournamentForm.register("name")}
+                    />
+                    {tournamentForm.formState.errors.name && (
+                      <p className="text-sm text-red-600">{tournamentForm.formState.errors.name.message}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="courseId">Golf Course</Label>
+                    <Select
+                      value={tournamentForm.watch("courseId")?.toString() || ""}
+                      onValueChange={(value) => tournamentForm.setValue("courseId", parseInt(value))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a golf course" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {courses?.map((course: any) => (
+                          <SelectItem key={course.id} value={course.id.toString()}>
+                            {course.name} - {course.location}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {tournamentForm.formState.errors.courseId && (
+                      <p className="text-sm text-red-600">{tournamentForm.formState.errors.courseId.message}</p>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="startDate">Start Date</Label>
+                      <Input
+                        id="startDate"
+                        type="date"
+                        {...tournamentForm.register("startDate")}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="endDate">End Date</Label>
+                      <Input
+                        id="endDate"
+                        type="date"
+                        {...tournamentForm.register("endDate")}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="dailyBuyIn">Daily Buy-in ($)</Label>
+                      <Input
+                        id="dailyBuyIn"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        {...tournamentForm.register("dailyBuyIn", { valueAsNumber: true })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="overallBuyIn">Overall Buy-in ($)</Label>
+                      <Input
+                        id="overallBuyIn"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        {...tournamentForm.register("overallBuyIn", { valueAsNumber: true })}
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    type="submit"
+                    disabled={createTournamentMutation.isPending}
+                    className="w-full bg-golf-green hover:bg-golf-green/90"
+                  >
+                    {createTournamentMutation.isPending ? "Creating..." : "Create Tournament"}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
