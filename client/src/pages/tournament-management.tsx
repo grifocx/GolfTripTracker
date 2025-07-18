@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Plus, MapPin, Users, DollarSign, Trophy, Settings, Info, Play, Pause, Square } from "lucide-react";
+import { Calendar, Plus, MapPin, Users, DollarSign, Trophy, Settings, Info, Play, Pause, Square, X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertTournamentSchema, insertRoundSchema, type InsertTournament, type InsertRound } from "@shared/schema";
@@ -49,6 +49,7 @@ export default function TournamentManagement() {
     resolver: zodResolver(insertTournamentSchema),
     defaultValues: {
       name: "",
+      location: "",
       courseId: 0,
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date().toISOString().split('T')[0],
@@ -115,6 +116,7 @@ export default function TournamentManagement() {
         description: "The tournament round has been created successfully.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/rounds"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
       setNewRoundDialogOpen(false);
       roundForm.reset();
     },
@@ -405,6 +407,17 @@ export default function TournamentManagement() {
                     />
                     {tournamentForm.formState.errors.name && (
                       <p className="text-sm text-red-600">{tournamentForm.formState.errors.name.message}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="location">Tournament Location</Label>
+                    <Input
+                      id="location"
+                      placeholder="e.g., Augusta, GA"
+                      {...tournamentForm.register("location")}
+                    />
+                    {tournamentForm.formState.errors.location && (
+                      <p className="text-sm text-red-600">{tournamentForm.formState.errors.location.message}</p>
                     )}
                   </div>
                   <div>
@@ -835,6 +848,200 @@ export default function TournamentManagement() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Tournament Players */}
+      {selectedTournament && (
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle>Tournament Players</CardTitle>
+              <TournamentPlayerManager
+                tournamentId={selectedTournament.id}
+                onPlayersUpdated={() => {
+                  queryClient.invalidateQueries({ queryKey: ["/api/tournaments", selectedTournament.id, "players"] });
+                }}
+              />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <TournamentPlayersList tournamentId={selectedTournament.id} />
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// Tournament Player Management Components
+function TournamentPlayerManager({ tournamentId, onPlayersUpdated }: { tournamentId: number; onPlayersUpdated: () => void }) {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedPlayerIds, setSelectedPlayerIds] = useState<number[]>([]);
+  const { toast } = useToast();
+  
+  const { data: allUsers } = useQuery({
+    queryKey: ["/api/users"],
+  });
+
+  const { data: tournamentPlayers } = useQuery({
+    queryKey: ["/api/tournaments", tournamentId, "players"],
+  });
+
+  const addPlayersMutation = useMutation({
+    mutationFn: async (playerIds: number[]) => {
+      return apiRequest("POST", `/api/tournaments/${tournamentId}/players`, { playerIds });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Players Added",
+        description: "Selected players have been added to the tournament.",
+      });
+      onPlayersUpdated();
+      setDialogOpen(false);
+      setSelectedPlayerIds([]);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add players",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const availableUsers = allUsers?.filter((user: any) => 
+    !tournamentPlayers?.some((tp: any) => tp.id === user.id)
+  ) || [];
+
+  const handleAddPlayers = () => {
+    if (selectedPlayerIds.length > 0) {
+      addPlayersMutation.mutate(selectedPlayerIds);
+    }
+  };
+
+  return (
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <DialogTrigger asChild>
+        <Button className="bg-golf-green hover:bg-golf-green/90">
+          <Plus className="h-4 w-4 mr-2" />
+          Add Players
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add Players to Tournament</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <Label>Select Players to Add:</Label>
+          <div className="max-h-60 overflow-y-auto space-y-2">
+            {availableUsers.length === 0 ? (
+              <p className="text-sm text-gray-500">All players are already in this tournament.</p>
+            ) : (
+              availableUsers.map((user: any) => (
+                <div key={user.id} className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id={`player-${user.id}`}
+                    checked={selectedPlayerIds.includes(user.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedPlayerIds([...selectedPlayerIds, user.id]);
+                      } else {
+                        setSelectedPlayerIds(selectedPlayerIds.filter(id => id !== user.id));
+                      }
+                    }}
+                    className="rounded border-gray-300"
+                  />
+                  <label htmlFor={`player-${user.id}`} className="text-sm">
+                    {user.firstName} {user.lastName} ({user.username}) - HCP: {user.handicapIndex}
+                  </label>
+                </div>
+              ))
+            )}
+          </div>
+          <Button
+            onClick={handleAddPlayers}
+            disabled={selectedPlayerIds.length === 0 || addPlayersMutation.isPending}
+            className="w-full bg-golf-green hover:bg-golf-green/90"
+          >
+            {addPlayersMutation.isPending ? "Adding..." : `Add ${selectedPlayerIds.length} Player(s)`}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function TournamentPlayersList({ tournamentId }: { tournamentId: number }) {
+  const { toast } = useToast();
+
+  const { data: tournamentPlayers, isLoading } = useQuery({
+    queryKey: ["/api/tournaments", tournamentId, "players"],
+  });
+
+  const removePlayerMutation = useMutation({
+    mutationFn: async (playerId: number) => {
+      return apiRequest("DELETE", `/api/tournaments/${tournamentId}/players/${playerId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Player Removed",
+        description: "Player has been removed from the tournament.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/tournaments", tournamentId, "players"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to remove player",
+        variant: "destructive",
+      });
+    },
+  });
+
+  if (isLoading) {
+    return <div className="text-center py-4">Loading players...</div>;
+  }
+
+  if (!tournamentPlayers || tournamentPlayers.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        <Users className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+        <p>No players added to this tournament yet.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {tournamentPlayers.map((player: any) => (
+        <div key={player.id} className="flex items-center justify-between p-3 border rounded-lg">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-golf-green rounded-full flex items-center justify-center">
+              <span className="text-white font-bold text-sm">
+                {player.firstName.charAt(0)}{player.lastName.charAt(0)}
+              </span>
+            </div>
+            <div>
+              <p className="font-medium">{player.firstName} {player.lastName}</p>
+              <p className="text-sm text-gray-600">{player.username} • HCP: {player.handicapIndex}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {player.isAdmin && (
+              <Badge variant="secondary" className="text-xs">Admin</Badge>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => removePlayerMutation.mutate(player.id)}
+              disabled={removePlayerMutation.isPending}
+              className="text-red-600 hover:text-red-700"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

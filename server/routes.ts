@@ -195,6 +195,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/users", async (req: Request, res: Response) => {
+    try {
+      const userData = insertUserSchema.parse(req.body);
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByUsername(userData.username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
+      
+      const user = await storage.createUser({
+        ...userData,
+        password: hashedPassword,
+      });
+
+      // Don't return password
+      const { password: _, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ message: fromZodError(error).message });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Tournament Players routes
+  app.get("/api/tournaments/:id/players", async (req: Request, res: Response) => {
+    try {
+      const tournamentId = parseInt(req.params.id);
+      const players = await storage.getTournamentPlayers(tournamentId);
+      res.json(players);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/tournaments/:id/players", async (req: Request, res: Response) => {
+    try {
+      const tournamentId = parseInt(req.params.id);
+      const { playerIds } = req.body;
+      
+      if (!Array.isArray(playerIds)) {
+        return res.status(400).json({ message: "playerIds must be an array" });
+      }
+      
+      const results = await storage.addPlayersToTournament(tournamentId, playerIds);
+      res.json(results);
+    } catch (error) {
+      console.error("Error adding players to tournament:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/tournaments/:tournamentId/players/:playerId", async (req: Request, res: Response) => {
+    try {
+      const tournamentId = parseInt(req.params.tournamentId);
+      const playerId = parseInt(req.params.playerId);
+      
+      await storage.removePlayerFromTournament(tournamentId, playerId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error removing player from tournament:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Course routes
   app.get("/api/courses", async (req: Request, res: Response) => {
     try {

@@ -571,6 +571,53 @@ export class DatabaseStorage implements IStorage {
     // For now, just a placeholder that will be expanded
     console.log(`Checking achievements for user ${userId}`);
   }
+
+  // Tournament Player Management
+  async getTournamentPlayers(tournamentId: number): Promise<User[]> {
+    const result = await db
+      .select({
+        id: users.id,
+        username: users.username,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        handicapIndex: users.handicapIndex,
+        isAdmin: users.isAdmin,
+        createdAt: users.createdAt,
+      })
+      .from(tournamentPlayers)
+      .innerJoin(users, eq(tournamentPlayers.userId, users.id))
+      .where(eq(tournamentPlayers.tournamentId, tournamentId))
+      .orderBy(users.firstName, users.lastName);
+    
+    return result;
+  }
+
+  async addPlayersToTournament(tournamentId: number, playerIds: number[]): Promise<any[]> {
+    const tournamentPlayerData = playerIds.map(playerId => ({
+      tournamentId,
+      userId: playerId,
+    }));
+
+    const results = await db
+      .insert(tournamentPlayers)
+      .values(tournamentPlayerData)
+      .onConflictDoNothing()
+      .returning();
+    
+    return results;
+  }
+
+  async removePlayerFromTournament(tournamentId: number, playerId: number): Promise<void> {
+    await db
+      .delete(tournamentPlayers)
+      .where(
+        and(
+          eq(tournamentPlayers.tournamentId, tournamentId),
+          eq(tournamentPlayers.userId, playerId)
+        )
+      );
+  }
 }
 
 export const storage = new DatabaseStorage();

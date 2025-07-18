@@ -18,6 +18,7 @@ export const users = pgTable("users", {
 export const tournaments = pgTable("tournaments", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  location: text("location").notNull(),
   courseId: integer("course_id").references(() => courses.id).notNull(),
   startDate: date("start_date").notNull(),
   endDate: date("end_date").notNull(),
