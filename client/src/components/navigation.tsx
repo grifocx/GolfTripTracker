@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { LogOut, Trophy, Calendar, Target, Users, Settings, MapPin, List, Award } from "lucide-react";
+import { LogOut, Trophy, Calendar, Target, Users, Settings, MapPin, List, Award, Gamepad2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavigationProps {
@@ -16,7 +16,7 @@ export function BottomNavigation({ currentView, onViewChange }: NavigationProps)
     { id: "achievements", label: "Badges", icon: Award },
     { id: "score-entry", label: "Scores", icon: Target, adminOnly: true },
     { id: "players", label: "Players", icon: Users },
-    { id: "admin", label: "Admin", icon: Settings, adminOnly: true },
+    { id: "tournaments", label: "Tournaments", icon: Gamepad2, adminOnly: true },
   ].filter(item => !item.adminOnly || isAdmin);
 
   return (
@@ -54,8 +54,8 @@ export function DesktopSidebar({ currentView, onViewChange }: NavigationProps) {
     { id: "achievements", label: "Achievements", icon: Award },
     { id: "score-entry", label: "Score Entry", icon: Target, adminOnly: true },
     { id: "players", label: "Players", icon: Users },
+    { id: "tournaments", label: "Tournament Management", icon: Gamepad2, adminOnly: true },
     { id: "courses", label: "Courses", icon: MapPin, adminOnly: true },
-    { id: "rounds", label: "Rounds", icon: List, adminOnly: true },
   ].filter(item => !item.adminOnly || isAdmin);
 
   return (

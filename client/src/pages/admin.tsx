@@ -4,39 +4,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Plus, Settings, MapPin, Calendar, Users, Edit, 
-  List, Calculator, Download, Info 
-} from "lucide-react";
+import { Plus, MapPin, Edit, Info, Settings, Users, Database } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertCourseSchema, insertRoundSchema, insertTournamentSchema } from "@shared/schema";
-import type { InsertCourse, InsertRound, InsertTournament } from "@shared/schema";
+import { insertCourseSchema } from "@shared/schema";
+import type { InsertCourse } from "@shared/schema";
 
 export default function Admin() {
   const { isAdmin } = useAuth();
   const { toast } = useToast();
   const [newCourseDialogOpen, setNewCourseDialogOpen] = useState(false);
-  const [newRoundDialogOpen, setNewRoundDialogOpen] = useState(false);
-  const [newTournamentDialogOpen, setNewTournamentDialogOpen] = useState(false);
-
-  const { data: tournament } = useQuery({
-    queryKey: ["/api/tournament/active"],
-  });
 
   const { data: courses } = useQuery({
     queryKey: ["/api/courses"],
   });
 
-  const { data: rounds } = useQuery({
-    queryKey: ["/api/tournaments", tournament?.id, "rounds"],
-    enabled: !!tournament?.id,
+  const { data: users } = useQuery({
+    queryKey: ["/api/users"],
   });
 
   const courseForm = useForm<InsertCourse>({
@@ -46,30 +35,6 @@ export default function Admin() {
       location: "",
       par: 72,
       yardage: 6500,
-    },
-  });
-
-  const roundForm = useForm<InsertRound>({
-    resolver: zodResolver(insertRoundSchema),
-    defaultValues: {
-      tournamentId: tournament?.id || 0,
-      courseId: 0,
-      roundNumber: 1,
-      date: new Date().toISOString().split('T')[0],
-      status: "pending",
-    },
-  });
-
-  const tournamentForm = useForm<InsertTournament>({
-    resolver: zodResolver(insertTournamentSchema),
-    defaultValues: {
-      name: "",
-      courseId: 0,
-      startDate: new Date().toISOString().split('T')[0],
-      endDate: new Date().toISOString().split('T')[0],
-      dailyBuyIn: 0,
-      overallBuyIn: 0,
-      isActive: true,
     },
   });
 
@@ -95,50 +60,6 @@ export default function Admin() {
     },
   });
 
-  const createRoundMutation = useMutation({
-    mutationFn: async (data: InsertRound) => {
-      return apiRequest("POST", "/api/rounds", data);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Round Created",
-        description: "The tournament round has been created successfully.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/tournaments", tournament?.id, "rounds"] });
-      setNewRoundDialogOpen(false);
-      roundForm.reset();
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create round",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const createTournamentMutation = useMutation({
-    mutationFn: async (data: InsertTournament) => {
-      return apiRequest("POST", "/api/tournaments", data);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Tournament Created",
-        description: "Your tournament has been created successfully!",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/tournament/active"] });
-      setNewTournamentDialogOpen(false);
-      tournamentForm.reset();
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create tournament",
-        variant: "destructive",
-      });
-    },
-  });
-
   if (!isAdmin) {
     return (
       <div className="space-y-6">
@@ -147,7 +68,7 @@ export default function Admin() {
             <div className="text-center text-gray-500">
               <Info className="h-12 w-12 mx-auto mb-4 text-gray-400" />
               <h3 className="text-lg font-medium mb-2">Admin Access Required</h3>
-              <p>Only administrators can access tournament management features.</p>
+              <p>Only administrators can access admin features.</p>
             </div>
           </CardContent>
         </Card>
@@ -159,464 +80,211 @@ export default function Admin() {
     createCourseMutation.mutate(data);
   };
 
-  const onCreateRound = (data: InsertRound) => {
-    createRoundMutation.mutate({
-      ...data,
-      tournamentId: tournament?.id || 0,
-    });
-  };
-
-  const onCreateTournament = (data: InsertTournament) => {
-    console.log("Creating tournament with data:", data);
-    console.log("Form errors:", tournamentForm.formState.errors);
-    createTournamentMutation.mutate(data);
-  };
-
-  // If no tournament exists, show tournament creation interface
-  if (!tournament) {
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold golf-dark">Create Your First Tournament</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-8">
-              <Calendar className="h-16 w-16 mx-auto mb-4 text-golf-green" />
-              <h3 className="text-lg font-semibold mb-2">No Tournament Found</h3>
-              <p className="text-gray-600 mb-6">
-                You need to create a tournament first before you can manage rounds and scorecards.
-              </p>
-              <Dialog open={newTournamentDialogOpen} onOpenChange={setNewTournamentDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-golf-green hover:bg-golf-green/90">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Tournament
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Create New Tournament</DialogTitle>
-                  </DialogHeader>
-                  <form onSubmit={tournamentForm.handleSubmit(onCreateTournament)} className="space-y-4">
-                    <div>
-                      <Label htmlFor="name">Tournament Name</Label>
-                      <Input
-                        id="name"
-                        placeholder="e.g., Annual Golf Trip 2025"
-                        {...tournamentForm.register("name")}
-                      />
-                      {tournamentForm.formState.errors.name && (
-                        <p className="text-sm text-red-600">{tournamentForm.formState.errors.name.message}</p>
-                      )}
-                    </div>
-                    <div>
-                      <Label htmlFor="courseId">Golf Course</Label>
-                      <Select
-                        value={tournamentForm.watch("courseId")?.toString() || ""}
-                        onValueChange={(value) => tournamentForm.setValue("courseId", parseInt(value))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a golf course" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {courses?.map((course: any) => (
-                            <SelectItem key={course.id} value={course.id.toString()}>
-                              {course.name} - {course.location}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {tournamentForm.formState.errors.courseId && (
-                        <p className="text-sm text-red-600">{tournamentForm.formState.errors.courseId.message}</p>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="startDate">Start Date</Label>
-                        <Input
-                          id="startDate"
-                          type="date"
-                          {...tournamentForm.register("startDate")}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="endDate">End Date</Label>
-                        <Input
-                          id="endDate"
-                          type="date"
-                          {...tournamentForm.register("endDate")}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="dailyBuyIn">Daily Buy-in ($)</Label>
-                        <Input
-                          id="dailyBuyIn"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          {...tournamentForm.register("dailyBuyIn", { valueAsNumber: true })}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="overallBuyIn">Overall Buy-in ($)</Label>
-                        <Input
-                          id="overallBuyIn"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          {...tournamentForm.register("overallBuyIn", { valueAsNumber: true })}
-                        />
-                      </div>
-                    </div>
-                    <Button
-                      type="submit"
-                      disabled={createTournamentMutation.isPending}
-                      className="w-full bg-golf-green hover:bg-golf-green/90"
-                    >
-                      {createTournamentMutation.isPending ? "Creating..." : "Create Tournament"}
-                    </Button>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      {/* Tournament Management Header */}
+      {/* Admin Overview */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl font-bold golf-dark">Tournament Management</CardTitle>
+          <CardTitle className="text-2xl font-bold golf-dark flex items-center gap-2">
+            <Settings className="h-6 w-6" />
+            Admin Panel
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Tournament Settings */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Current Tournament</h3>
-              <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-golf-green/10 p-4 rounded-lg">
+              <div className="flex items-center gap-3">
+                <MapPin className="h-8 w-8 text-golf-green" />
                 <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-1">Tournament Name</Label>
-                  <Input
-                    value={tournament?.name || ""}
-                    readOnly
-                    className="w-full"
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-1">Daily Buy-in ($)</Label>
-                  <Input
-                    value={tournament?.dailyBuyIn || ""}
-                    readOnly
-                    className="w-full"
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-1">Overall Buy-in ($)</Label>
-                  <Input
-                    value={tournament?.overallBuyIn || ""}
-                    readOnly
-                    className="w-full"
-                  />
+                  <div className="text-2xl font-bold text-golf-green">
+                    {courses?.length || 0}
+                  </div>
+                  <div className="text-sm text-gray-600">Golf Courses</div>
                 </div>
               </div>
             </div>
-
-            {/* Quick Actions */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
-              <div className="grid grid-cols-1 gap-3">
-                <Dialog open={newRoundDialogOpen} onOpenChange={setNewRoundDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="flex items-center justify-center space-x-2 p-3 bg-golf-green text-white hover:bg-golf-green/90">
-                      <Plus className="h-4 w-4" />
-                      <span>Create New Round</span>
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Create New Round</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={roundForm.handleSubmit(onCreateRound)} className="space-y-4">
-                      <div>
-                        <Label htmlFor="courseId">Course</Label>
-                        <Select
-                          value={roundForm.watch("courseId")?.toString() || ""}
-                          onValueChange={(value) => roundForm.setValue("courseId", parseInt(value))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a course" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {courses?.map((course: any) => (
-                              <SelectItem key={course.id} value={course.id.toString()}>
-                                {course.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="roundNumber">Round Number</Label>
-                        <Input
-                          id="roundNumber"
-                          type="number"
-                          min="1"
-                          {...roundForm.register("roundNumber", { valueAsNumber: true })}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="date">Date</Label>
-                        <Input
-                          id="date"
-                          type="date"
-                          {...roundForm.register("date")}
-                        />
-                      </div>
-                      <Button
-                        type="submit"
-                        disabled={createRoundMutation.isPending}
-                        className="w-full bg-golf-green hover:bg-golf-green/90"
-                      >
-                        {createRoundMutation.isPending ? "Creating..." : "Create Round"}
-                      </Button>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-
-                <Button className="flex items-center justify-center space-x-2 p-3 bg-blue-600 text-white hover:bg-blue-700">
-                  <Users className="h-4 w-4" />
-                  <span>Assign Scorecards</span>
-                </Button>
-                <Button className="flex items-center justify-center space-x-2 p-3 bg-golf-gold text-white hover:bg-golf-gold/90">
-                  <Calculator className="h-4 w-4" />
-                  <span>Calculate Payouts</span>
-                </Button>
-                <Button className="flex items-center justify-center space-x-2 p-3 bg-gray-600 text-white hover:bg-gray-700">
-                  <Download className="h-4 w-4" />
-                  <span>Export Results</span>
-                </Button>
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <div className="flex items-center gap-3">
+                <Users className="h-8 w-8 text-blue-600" />
+                <div>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {users?.length || 0}
+                  </div>
+                  <div className="text-sm text-gray-600">Registered Users</div>
+                </div>
+              </div>
+            </div>
+            <div className="bg-golf-gold/10 p-4 rounded-lg">
+              <div className="flex items-center gap-3">
+                <Database className="h-8 w-8 golf-gold" />
+                <div>
+                  <div className="text-2xl font-bold golf-gold">Active</div>
+                  <div className="text-sm text-gray-600">System Status</div>
+                </div>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="courses" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="courses">Courses</TabsTrigger>
-          <TabsTrigger value="rounds">Rounds</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="courses">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center space-x-2">
-                  <MapPin className="h-5 w-5 text-golf-green" />
-                  <span>Golf Courses</span>
-                </CardTitle>
-                <Dialog open={newCourseDialogOpen} onOpenChange={setNewCourseDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="bg-golf-green hover:bg-golf-green/90">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Course
+      {/* Course Management */}
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              Course Management
+            </CardTitle>
+            <Dialog open={newCourseDialogOpen} onOpenChange={setNewCourseDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-golf-green hover:bg-golf-green/90">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Course
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create New Golf Course</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={courseForm.handleSubmit(onCreateCourse)} className="space-y-4">
+                  <div>
+                    <Label htmlFor="name">Course Name</Label>
+                    <Input
+                      id="name"
+                      placeholder="e.g., Augusta National"
+                      {...courseForm.register("name")}
+                    />
+                    {courseForm.formState.errors.name && (
+                      <p className="text-sm text-red-600">{courseForm.formState.errors.name.message}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="location">Location</Label>
+                    <Input
+                      id="location"
+                      placeholder="e.g., Augusta, Georgia"
+                      {...courseForm.register("location")}
+                    />
+                    {courseForm.formState.errors.location && (
+                      <p className="text-sm text-red-600">{courseForm.formState.errors.location.message}</p>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="par">Par</Label>
+                      <Input
+                        id="par"
+                        type="number"
+                        min="70"
+                        max="74"
+                        {...courseForm.register("par", { valueAsNumber: true })}
+                      />
+                      {courseForm.formState.errors.par && (
+                        <p className="text-sm text-red-600">{courseForm.formState.errors.par.message}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="yardage">Yardage</Label>
+                      <Input
+                        id="yardage"
+                        type="number"
+                        min="5000"
+                        max="8000"
+                        {...courseForm.register("yardage", { valueAsNumber: true })}
+                      />
+                      {courseForm.formState.errors.yardage && (
+                        <p className="text-sm text-red-600">{courseForm.formState.errors.yardage.message}</p>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    type="submit"
+                    disabled={createCourseMutation.isPending}
+                    className="w-full bg-golf-green hover:bg-golf-green/90"
+                  >
+                    {createCourseMutation.isPending ? "Creating..." : "Create Course"}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {courses && courses.length > 0 ? (
+            <div className="space-y-3">
+              {courses.map((course: any) => (
+                <div key={course.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <MapPin className="h-5 w-5 text-golf-green" />
+                    <div>
+                      <p className="font-medium">{course.name}</p>
+                      <p className="text-sm text-gray-600">{course.location}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">Par {course.par}</Badge>
+                    <Badge variant="outline">{course.yardage} yards</Badge>
+                    <Button variant="ghost" size="sm">
+                      <Edit className="h-4 w-4" />
                     </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Add New Course</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={courseForm.handleSubmit(onCreateCourse)} className="space-y-4">
-                      <div>
-                        <Label htmlFor="name">Course Name</Label>
-                        <Input
-                          id="name"
-                          {...courseForm.register("name")}
-                          placeholder="e.g., Pebble Beach Golf Links"
-                        />
-                        {courseForm.formState.errors.name && (
-                          <p className="text-sm text-red-600">{courseForm.formState.errors.name.message}</p>
-                        )}
-                      </div>
-                      <div>
-                        <Label htmlFor="location">Location</Label>
-                        <Input
-                          id="location"
-                          {...courseForm.register("location")}
-                          placeholder="e.g., Pebble Beach, CA"
-                        />
-                        {courseForm.formState.errors.location && (
-                          <p className="text-sm text-red-600">{courseForm.formState.errors.location.message}</p>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="par">Par</Label>
-                          <Input
-                            id="par"
-                            type="number"
-                            min="60"
-                            max="80"
-                            {...courseForm.register("par", { valueAsNumber: true })}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="yardage">Yardage</Label>
-                          <Input
-                            id="yardage"
-                            type="number"
-                            min="4000"
-                            max="8000"
-                            {...courseForm.register("yardage", { valueAsNumber: true })}
-                          />
-                        </div>
-                      </div>
-                      <Button
-                        type="submit"
-                        disabled={createCourseMutation.isPending}
-                        className="w-full bg-golf-green hover:bg-golf-green/90"
-                      >
-                        {createCourseMutation.isPending ? "Creating..." : "Create Course"}
-                      </Button>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {!courses || courses.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  No courses added yet
+                  </div>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  {courses.map((course: any) => (
-                    <Card key={course.id} className="border border-gray-200">
-                      <CardContent className="p-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
-                          <div>
-                            <h4 className="font-semibold golf-dark">{course.name}</h4>
-                            <p className="text-sm text-gray-600">{course.location}</p>
-                            <div className="text-sm text-gray-500 mt-1">
-                              Par: {course.par} | Yardage: {course.yardage}
-                            </div>
-                          </div>
-                          <div className="flex space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-gray-700 hover:bg-gray-50"
-                            >
-                              <Edit className="h-3 w-3 mr-1" />
-                              Edit
-                            </Button>
-                            <Button
-                              size="sm"
-                              className="bg-golf-green hover:bg-golf-green/90"
-                            >
-                              <List className="h-3 w-3 mr-1" />
-                              Holes
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <MapPin className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+              <p>No courses created yet. Add your first course to get started.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-        <TabsContent value="rounds">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Calendar className="h-5 w-5 text-golf-green" />
-                <span>Tournament Rounds</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {!rounds || rounds.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  No rounds created yet
+      {/* User Management */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            User Management
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {users && users.length > 0 ? (
+            <div className="space-y-3">
+              {users.map((user: any) => (
+                <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-golf-green/10 rounded-full flex items-center justify-center">
+                      <span className="text-golf-green font-medium">
+                        {user.username?.charAt(0)?.toUpperCase() || "U"}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-medium">{user.username}</p>
+                      <p className="text-sm text-gray-600">
+                        {user.isAdmin ? "Administrator" : "Player"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={user.isAdmin ? "default" : "secondary"}>
+                      {user.isAdmin ? "Admin" : "Player"}
+                    </Badge>
+                    <Button variant="ghost" size="sm">
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Round
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Course
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Date
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {rounds.map((round: any) => (
-                        <tr key={round.id}>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="w-8 h-8 bg-golf-green rounded-full flex items-center justify-center">
-                                <span className="text-white text-sm font-bold">{round.roundNumber}</span>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">
-                              {courses?.find((c: any) => c.id === round.courseId)?.name || "Unknown Course"}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {new Date(round.date).toLocaleDateString()}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              round.status === "completed" ? "bg-green-100 text-green-800" :
-                              round.status === "in_progress" ? "bg-blue-100 text-blue-800" :
-                              "bg-gray-100 text-gray-800"
-                            }`}>
-                              {round.status.replace("_", " ")}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-golf-green hover:text-golf-green/80"
-                            >
-                              <Edit className="h-3 w-3 mr-1" />
-                              Enter Scores
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <Users className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+              <p>No users found.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

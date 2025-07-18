@@ -149,6 +149,15 @@ The application follows a modern full-stack architecture with clear separation o
 - Enhanced tournament creation form with course selection dropdown
 - Updated all related database relations and API endpoints
 
+### July 18, 2025 - Tournament Management UX Improvements
+- Fixed tournament creation API issues with schema validation for buy-in amounts
+- Added dedicated "Tournament Management" navigation item for better UX organization
+- Created separate tournament management page with comprehensive tournament and rounds overview
+- Removed "Rounds" as separate menu item since rounds are a subset of tournaments
+- Improved navigation structure with logical grouping of admin features
+- Added proper tournament stats and round management interface
+- Fixed tournament creation dialog functionality with proper course selection
+
 ### Deployment Ready
 - Production build process configured with frontend/backend compilation
 - Database schema complete with test data
