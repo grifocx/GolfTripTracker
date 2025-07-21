@@ -18,7 +18,7 @@ export const users = pgTable("users", {
 export const tournaments = pgTable("tournaments", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  location: text("location").notNull(),
+  location: text("location"),
   courseId: integer("course_id").references(() => courses.id).notNull(),
   startDate: date("start_date").notNull(),
   endDate: date("end_date").notNull(),
@@ -27,14 +27,22 @@ export const tournaments = pgTable("tournaments", {
   status: text("status").notNull().default("draft"), // draft, in_progress, completed
   isActive: boolean("is_active").default(true).notNull(), // Keep for backward compatibility
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  // Add indexes for better query performance
+  statusIdx: index("tournaments_status_idx").on(table.status),
+  activeIdx: index("tournaments_active_idx").on(table.isActive),
+  dateIdx: index("tournaments_date_idx").on(table.startDate, table.endDate),
+}));
 
 export const tournamentPlayers = pgTable("tournament_players", {
   id: serial("id").primaryKey(),
   tournamentId: integer("tournament_id").references(() => tournaments.id).notNull(),
   userId: integer("user_id").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  // Prevent duplicate player entries
+  uniquePlayerTournament: index("unique_player_tournament").on(table.tournamentId, table.userId),
+}));
 
 export const courses = pgTable("courses", {
   id: serial("id").primaryKey(),
@@ -87,7 +95,13 @@ export const scores = pgTable("scores", {
   strokes: integer("strokes").notNull(),
   netStrokes: integer("net_strokes").notNull(), // Gross strokes minus handicap strokes for this hole
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  // Prevent duplicate scores for same player/hole/scorecard
+  uniqueScore: index("unique_score_idx").on(table.scorecardId, table.userId, table.holeId),
+  // Performance indexes
+  scorecardIdx: index("scores_scorecard_idx").on(table.scorecardId),
+  userIdx: index("scores_user_idx").on(table.userId),
+}));
 
 export const payouts = pgTable("payouts", {
   id: serial("id").primaryKey(),

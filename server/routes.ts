@@ -1,8 +1,8 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { asyncHandler, createError, globalErrorHandler } from "./errorHandler";
 import { insertUserSchema, loginSchema, insertCourseSchema, insertHoleSchema, insertRoundSchema, insertScorecardSchema, insertTournamentSchema } from "@shared/schema";
-import { fromZodError } from "zod-validation-error";
 import bcrypt from "bcryptjs";
 import { achievementService } from "./achievements";
 import { 
@@ -14,69 +14,56 @@ import {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
-  app.post("/api/auth/register", async (req: Request, res: Response) => {
-    try {
-      const userData = insertUserSchema.parse(req.body);
-      
-      // Check if user already exists
-      const existingUser = await storage.getUserByUsername(userData.username);
-      if (existingUser) {
-        return res.status(400).json({ message: "Username already exists" });
-      }
-
-      // Hash password
-      const hashedPassword = await bcrypt.hash(userData.password, 10);
-      
-      const user = await storage.createUser({
-        ...userData,
-        password: hashedPassword,
-      });
-
-      // Don't return password
-      const { password: _, ...userWithoutPassword } = user;
-      res.json(userWithoutPassword);
-    } catch (error: any) {
-      if (error.name === "ZodError") {
-        return res.status(400).json({ message: fromZodError(error).message });
-      }
-      res.status(500).json({ message: "Internal server error" });
+  app.post("/api/auth/register", asyncHandler(async (req: Request, res: Response) => {
+    const userData = insertUserSchema.parse(req.body);
+    
+    // Check if user already exists
+    const existingUser = await storage.getUserByUsername(userData.username);
+    if (existingUser) {
+      throw createError.conflict("Username already exists");
     }
-  });
 
-  app.post("/api/auth/login", async (req: Request, res: Response) => {
-    try {
-      console.log("Login request body:", req.body);
-      const { username, password } = loginSchema.parse(req.body);
-      console.log("Parsed login data:", { username, password: "***" });
-      
-      const user = await storage.getUserByUsername(username);
-      console.log("Found user:", user ? { id: user.id, username: user.username } : null);
-      
-      if (!user) {
-        console.log("User not found for username:", username);
-        return res.status(401).json({ message: "Invalid credentials" });
-      }
+    // Hash password
+    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    
+    const user = await storage.createUser({
+      ...userData,
+      password: hashedPassword,
+    });
 
-      const isValidPassword = await bcrypt.compare(password, user.password);
-      console.log("Password valid:", isValidPassword);
-      
-      if (!isValidPassword) {
-        console.log("Invalid password for user:", username);
-        return res.status(401).json({ message: "Invalid credentials" });
-      }
+    // Don't return password
+    const { password: _, ...userWithoutPassword } = user;
+    res.json({
+      success: true,
+      data: userWithoutPassword,
+    });
+  }));
 
-      // Don't return password
-      const { password: _, ...userWithoutPassword } = user;
-      console.log("Login successful, returning user:", { id: user.id, username: user.username });
-      res.json(userWithoutPassword);
-    } catch (error: any) {
-      console.error("Login error:", error);
-      if (error.name === "ZodError") {
-        return res.status(400).json({ message: fromZodError(error).message });
-      }
-      res.status(500).json({ message: "Internal server error" });
+  app.post("/api/auth/login", asyncHandler(async (req: Request, res: Response) => {
+    const { username, password } = loginSchema.parse(req.body);
+    
+    const user = await storage.getUserByUsername(username);
+    
+    if (!user) {
+      throw createError.unauthorized("Invalid credentials");
     }
-  });
+
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    
+    if (!isValidPassword) {
+      throw createError.unauthorized("Invalid credentials");
+    }
+
+    // Don't return password
+    const { password: _, ...userWithoutPassword } = user;
+    res.json({
+      success: true,
+      data: userWithoutPassword,
+    });
+  }));
+
+  // Add global error handler
+  app.use(globalErrorHandler);
 
   // Tournament routes
   app.get("/api/tournaments", async (req: Request, res: Response) => {

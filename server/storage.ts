@@ -428,33 +428,48 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTournamentLeaderboard(tournamentId: number): Promise<any[]> {
-    // Get leaderboard using proper net scores
+    // Optimized leaderboard query with proper joins and aggregation
     const leaderboard = await db
       .select({
         userId: users.id,
         firstName: users.firstName,
         lastName: users.lastName,
         handicapIndex: users.handicapIndex,
-        totalStrokes: sql<number>`sum(${scores.strokes})`,
-        totalNetStrokes: sql<number>`sum(${scores.netStrokes})`,
+        totalStrokes: sql<number>`COALESCE(sum(${scores.strokes}), 0)`,
+        totalNetStrokes: sql<number>`COALESCE(sum(${scores.netStrokes}), 0)`,
         roundsPlayed: sql<number>`count(distinct ${rounds.id})`,
+        holesCompleted: sql<number>`count(${scores.id})`,
       })
       .from(users)
       .innerJoin(scorecardPlayers, eq(users.id, scorecardPlayers.userId))
       .innerJoin(scorecards, eq(scorecardPlayers.scorecardId, scorecards.id))
       .innerJoin(rounds, eq(scorecards.roundId, rounds.id))
-      .innerJoin(scores, and(eq(scores.userId, users.id), eq(scores.scorecardId, scorecards.id)))
+      .leftJoin(scores, and(eq(scores.userId, users.id), eq(scores.scorecardId, scorecards.id)))
       .where(eq(rounds.tournamentId, tournamentId))
       .groupBy(users.id, users.firstName, users.lastName, users.handicapIndex)
-      .orderBy(sql`sum(${scores.netStrokes})`);
+      .having(sql`count(${scores.id}) > 0`) // Only include players with scores
+      .orderBy(sql`COALESCE(sum(${scores.netStrokes}), 999999)`); // Handle nulls properly
 
-    // Add calculated fields and positions
-    return leaderboard.map((player, index) => ({
+    // Add calculated fields and positions with tie handling
+    let currentPosition = 1;
+    let previousScore = null;
+    
+    return leaderboard.map((player, index) => {
+      // Handle ties properly
+      if (previousScore !== null && player.totalNetStrokes !== previousScore) {
+        currentPosition = index + 1;
+      }
+      previousScore = player.totalNetStrokes;
+      
+      return {
       ...player,
       netScore: player.totalNetStrokes || 0,
-      position: index + 1,
+      position: currentPosition,
       name: `${player.firstName} ${player.lastName}`,
-    }));
+      scoringAverage: player.holesCompleted > 0 ? 
+        Math.round((player.totalNetStrokes / player.holesCompleted) * 100) / 100 : 0,
+    };
+    });
   }
 
   async getDailyLeaderboard(roundId: number): Promise<any[]> {
