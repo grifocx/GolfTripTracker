@@ -28,10 +28,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         createdAt: new Date()
       });
     } else {
+    // For demo deployment, use mock admin user
+    if (window.location.hostname.includes('netlify.app')) {
+      setUser({
+        id: 1,
+        username: "demo_admin",
+        firstName: "Demo",
+        lastName: "Admin",
+        email: "admin@demo.com",
+        handicapIndex: "0.0",
+        isAdmin: true,
+        createdAt: new Date()
+      });
+    } else {
       const currentUser = authApi.getCurrentUser();
       if (currentUser) {
         setUser(currentUser);
       }
+    }
     }
   }, []);
 

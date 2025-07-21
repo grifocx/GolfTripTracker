@@ -24,6 +24,19 @@
         document.body.style.paddingTop = '40px';
       }
     </script>
+    <!-- Demo banner for static deployment -->
+    <script>
+      if (window.location.hostname.includes('netlify.app')) {
+        const banner = document.createElement('div');
+        banner.innerHTML = `
+          <div style="position: fixed; top: 0; left: 0; right: 0; background: #f59e0b; color: white; text-align: center; padding: 8px; z-index: 9999; font-size: 14px;">
+            🏌️ Demo Mode - This is a static demo of BroGolfTracker with mock data
+          </div>
+        `;
+        document.body.appendChild(banner);
+        document.body.style.paddingTop = '40px';
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
     <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
     <script type="text/javascript" src="https://replit.com/public/js/replit-dev-banner.js"></script>
