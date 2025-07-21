@@ -274,6 +274,8 @@ export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
   isAdmin: true,
+}).extend({
+  handicapIndex: z.number().min(0).max(54),
 });
 
 export const insertTournamentSchema = z.object({
