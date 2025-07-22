@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import { storage } from "../storage";
 import { insertUserSchema, loginSchema } from "@shared/schema";
@@ -6,7 +6,7 @@ import { asyncHandler, createError } from "../errorHandler";
 
 export function registerAuthRoutes(app: Express) {
   // User registration
-  app.post("/api/auth/register", asyncHandler(async (req, res) => {
+  app.post("/api/auth/register", asyncHandler(async (req: Request, res: Response) => {
     const userData = insertUserSchema.parse(req.body);
     
     // Check if user already exists
@@ -16,7 +16,7 @@ export function registerAuthRoutes(app: Express) {
     }
 
     // Check if email already exists
-    const existingEmail = await storage.getUserByEmail?.(userData.email);
+    const existingEmail = await storage.getUserByEmail(userData.email);
     if (existingEmail) {
       throw createError.conflict("Email already exists");
     }
@@ -38,7 +38,7 @@ export function registerAuthRoutes(app: Express) {
   }));
 
   // User login
-  app.post("/api/auth/login", asyncHandler(async (req, res) => {
+  app.post("/api/auth/login", asyncHandler(async (req: Request, res: Response) => {
     const { username, password } = loginSchema.parse(req.body);
     
     const user = await storage.getUserByUsername(username);
@@ -62,7 +62,7 @@ export function registerAuthRoutes(app: Express) {
   }));
 
   // Get current user (if implementing sessions)
-  app.get("/api/auth/me", asyncHandler(async (req, res) => {
+  app.get("/api/auth/me", asyncHandler(async (req: Request, res: Response) => {
     // This would require session middleware
     res.json({
       success: true,

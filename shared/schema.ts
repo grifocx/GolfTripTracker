@@ -331,6 +331,7 @@ export const loginSchema = z.object({
 
 // Types
 export type User = typeof users.$inferSelect;
+export type PublicUser = Omit<User, 'password'>; // User without password for client-side use
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Tournament = typeof tournaments.$inferSelect;
 export type InsertTournament = z.infer<typeof insertTournamentSchema>;

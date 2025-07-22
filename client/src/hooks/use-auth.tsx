@@ -1,10 +1,10 @@
 import { useState, useEffect, createContext, useContext } from "react";
-import type { User } from "@shared/schema";
+import type { PublicUser } from "@shared/schema";
 import { authApi } from "@/lib/auth";
 
 interface AuthContextType {
-  user: User | null;
-  login: (user: User) => void;
+  user: PublicUser | null;
+  login: (user: PublicUser) => void;
   logout: () => void;
   isAdmin: boolean;
 }
@@ -12,22 +12,9 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<PublicUser | null>(null);
 
   useEffect(() => {
-    // For demo deployment, use mock admin user
-    if (window.location.hostname.includes('netlify.app')) {
-      setUser({
-        id: 1,
-        username: "demo_admin",
-        firstName: "Demo",
-        lastName: "Admin",
-        email: "admin@demo.com",
-        handicapIndex: "0.0",
-        isAdmin: true,
-        createdAt: new Date()
-      });
-    } else {
     // For demo deployment, use mock admin user
     if (window.location.hostname.includes('netlify.app')) {
       setUser({
@@ -46,10 +33,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(currentUser);
       }
     }
-    }
   }, []);
 
-  const login = (userData: User) => {
+  const login = (userData: PublicUser) => {
     setUser(userData);
     authApi.setCurrentUser(userData);
   };
