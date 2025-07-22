@@ -2,21 +2,31 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    let errorMessage = res.statusText;
+    let errorMessage = res.statusText || "Unknown error";
     try {
       const text = await res.text();
-      if (text) {
+      if (text && typeof text === 'string') {
         try {
           const errorData = JSON.parse(text);
-          errorMessage = errorData.message || text;
+          // Handle nested error structures from the backend
+          if (errorData.error && errorData.error.message) {
+            errorMessage = errorData.error.message;
+          } else if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (typeof errorData === 'string') {
+            errorMessage = errorData;
+          } else {
+            errorMessage = text;
+          }
         } catch {
           errorMessage = text;
         }
       }
     } catch {
       // Use default status text if unable to read response
+      errorMessage = res.statusText || "Network error";
     }
-    throw new Error(`${res.status}: ${errorMessage}`);
+    throw new Error(errorMessage);
   }
 }
 
