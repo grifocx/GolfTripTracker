@@ -150,6 +150,7 @@ export class DatabaseStorage implements IStorage {
         id: users.id,
         username: users.username,
         email: users.email,
+        password: users.password,
         firstName: users.firstName,
         lastName: users.lastName,
         handicapIndex: users.handicapIndex,
@@ -368,6 +369,7 @@ export class DatabaseStorage implements IStorage {
         userId: scores.userId,
         holeId: scores.holeId,
         strokes: scores.strokes,
+        netStrokes: scores.netStrokes,
         createdAt: scores.createdAt,
         user: users,
         hole: holes,
@@ -458,7 +460,7 @@ export class DatabaseStorage implements IStorage {
 
     // Add calculated fields and positions with tie handling
     let currentPosition = 1;
-    let previousScore = null;
+    let previousScore: number | null = null;
     
     return leaderboard.map((player, index) => {
       // Handle ties properly
@@ -538,11 +540,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserAchievements(userId: number): Promise<(UserAchievement & { achievement: Achievement })[]> {
-    return await db
-      .select()
+    const result = await db
+      .select({
+        id: userAchievements.id,
+        userId: userAchievements.userId,
+        achievementId: userAchievements.achievementId,
+        progress: userAchievements.progress,
+        isCompleted: userAchievements.isCompleted,
+        completedAt: userAchievements.completedAt,
+        tournamentId: userAchievements.tournamentId,
+        roundId: userAchievements.roundId,
+        createdAt: userAchievements.createdAt,
+        achievement: achievements,
+      })
       .from(userAchievements)
       .innerJoin(achievements, eq(userAchievements.achievementId, achievements.id))
       .where(eq(userAchievements.userId, userId));
+    
+    return result;
   }
 
   async createAchievement(achievement: InsertAchievement): Promise<Achievement> {
@@ -593,41 +608,7 @@ export class DatabaseStorage implements IStorage {
     console.log(`Checking achievements for user ${userId}`);
   }
 
-  // Tournament Player Management
-  async getTournamentPlayers(tournamentId: number): Promise<User[]> {
-    const result = await db
-      .select({
-        id: users.id,
-        username: users.username,
-        email: users.email,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        handicapIndex: users.handicapIndex,
-        isAdmin: users.isAdmin,
-        createdAt: users.createdAt,
-      })
-      .from(tournamentPlayers)
-      .innerJoin(users, eq(tournamentPlayers.userId, users.id))
-      .where(eq(tournamentPlayers.tournamentId, tournamentId))
-      .orderBy(users.firstName, users.lastName);
-    
-    return result;
-  }
 
-  async addPlayersToTournament(tournamentId: number, playerIds: number[]): Promise<any[]> {
-    const tournamentPlayerData = playerIds.map(playerId => ({
-      tournamentId,
-      userId: playerId,
-    }));
-
-    const results = await db
-      .insert(tournamentPlayers)
-      .values(tournamentPlayerData)
-      .onConflictDoNothing()
-      .returning();
-    
-    return results;
-  }
 
   async removePlayerFromTournament(tournamentId: number, playerId: number): Promise<void> {
     await db
